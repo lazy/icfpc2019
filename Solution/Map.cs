@@ -36,11 +36,13 @@
 
         public Cell this[int x, int y] => this.cells[x, y];
 
-        public static Map FromAscii(int startX, int startY, params string[] lines)
+        public static Map FromAscii(params string[] lines)
         {
             // matrix is transposed, because our coords are (x, y) but
             // visual coords are (y, x)
             var cells = new Cell[lines[0].Length, lines.Length];
+
+            (int, int)? startPosition = null;
 
             // Turn map upside down and transpose so we can use convenient coords
             for (var reverseY = 0; reverseY < lines.Length; ++reverseY)
@@ -54,9 +56,23 @@
 
                 for (var x = 0; x < line.Length; ++x)
                 {
-                    cells[x, y] = AsciiToCell(line[x]);
+                    if (line[x] == 'v')
+                    {
+                        if (startPosition != null)
+                        {
+                            throw new ArgumentException("More than one start position found");
+                        }
+
+                        startPosition = (x, y);
+                    }
+                    else
+                    {
+                        cells[x, y] = AsciiToCell(line[x]);
+                    }
                 }
             }
+
+            var (startX, startY) = startPosition ?? throw new ArgumentException("Initial position was not found");
 
             return new Map(startX, startY, cells);
         }
@@ -70,7 +86,10 @@
                 var currentRow = new StringBuilder();
                 for (var x = 0; x < this.Width; ++x)
                 {
-                    currentRow.Append(this.CellToAscii(x, y));
+                    var c = (x, y) == (this.StartX, this.StartY)
+                        ? 'v'
+                        : CellToAscii(this[x, y]);
+                    currentRow.Append(c);
                 }
 
                 rows.Add(currentRow.ToString());
@@ -79,31 +98,21 @@
             return string.Join("\n", rows);
         }
 
-        private static Cell AsciiToCell(char c)
-        {
-            switch (c)
-            {
-                case '.': return Cell.Empty;
-                case '#': return Cell.Obstacle;
-                case 'x': return Cell.Edge;
-                case 'B': return Cell.BoosterB;
-                case 'F': return Cell.BoosterF;
-                case 'D': return Cell.BoosterD;
-                case 'X': return Cell.BoosterX;
-                default:
-                    throw new ArgumentOutOfRangeException($"Invalid cell ascii representation: {c}");
-            }
-        }
+        private static Cell AsciiToCell(char c) =>
+            c switch
+                {
+                '.' => Cell.Empty,
+                '#' => Cell.Obstacle,
+                'x' => Cell.Edge,
+                'B' => Cell.BoosterB,
+                'F' => Cell.BoosterF,
+                'D' => Cell.BoosterD,
+                'X' => Cell.BoosterX,
+                _ => throw new ArgumentOutOfRangeException($"Invalid cell ascii representation: {c}"),
+                };
 
-        private char CellToAscii(int x, int y)
-        {
-            if (x == this.StartX && y == this.StartY)
-            {
-                return 'v';
-            }
-
-            var cell = this[x, y];
-            return cell switch
+        private static char CellToAscii(Cell cell) =>
+            cell switch
                 {
                 Cell.Empty => '.',
                 Cell.Obstacle => '#',
@@ -112,8 +121,7 @@
                 Cell.BoosterF => 'F',
                 Cell.BoosterD => 'D',
                 Cell.BoosterX => 'X',
-                _ => throw new Exception(string.Format("Invalid enum value: {}", cell)),
+                _ => throw new Exception($"Invalid enum value: {cell}"),
                 };
-        }
     }
 }

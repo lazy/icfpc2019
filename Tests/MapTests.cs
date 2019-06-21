@@ -10,10 +10,8 @@
         public void FromAsciiWorks()
         {
             var map = Map.FromAscii(
-                8,
-                4,
                 @"xxxxxxxxxxxxxxxxxxxxx",
-                @"xxx.................x",
+                @"xxx.....v...........x",
                 @"xxxxxx...###.....xxxx",
                 @"xx.....BFDX##...xxxxx",
                 @"xx................xxx",
