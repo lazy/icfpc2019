@@ -87,6 +87,17 @@
             return cell != Cell.Edge && cell != Cell.Obstacle;
         }
 
+        public bool CanMoveTo(int x, int y) =>
+            this[x, y] switch
+                {
+                Cell.Empty => true,
+                Cell.Drill => true,
+                Cell.FastWheels => true,
+                Cell.ManipulatorExtension => true,
+                Cell.MysteriousPoint => true,
+                _ => false,
+                };
+
         public override string ToString()
         {
             var rows = new List<string>();

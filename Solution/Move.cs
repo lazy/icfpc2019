@@ -8,8 +8,8 @@
         MoveRight,
         TurnLeft,
         TurnRight,
-        UseBoosterB, // TODO: coords
-        UseBoosterF,
-        UseBoosterL,
+        UseManipulatorExtension, // TODO: coords
+        UseFastWheels,
+        UseDrill,
     }
 }

@@ -25,21 +25,21 @@
             this.TestOnSampleMap(
                 "WDWB(1,2)DSQDB(-3,1)DDDWWWWWWWSSEDSSDWWESSSSSAAAAAQQWWWWWWW",
                 true,
-                15);
+                48);
 
         [Fact]
         public void SampleSolution2IsValid() =>
             this.TestOnSampleMap(
                 "WWDSFDDDDAQWWWWQAAAQSSSQDWWDDDWSSS",
                 true,
-                15);
+                34);
 
         [Fact]
         public void SampleSolution3IsValid() =>
             this.TestOnSampleMap(
                 "WDWAWSSFDDDDDQQWLAAAAAWEEDDDDDWQQAAAAAWEEDDDDD",
                 true,
-                15);
+                46);
 
         private void TestOnSampleMap(string moves, bool isSuccessful, int? timeUnits)
         {
