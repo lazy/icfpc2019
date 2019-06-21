@@ -94,14 +94,11 @@
 
         public int WrappedCellsCount => this.wrappedCellsCount;
 
-        public State? Next(Move move)
+        public State? Next(Command command)
         {
-            switch (move)
+            switch (command)
             {
-                case Move.MoveUp:
-                case Move.MoveDown:
-                case Move.MoveLeft:
-                case Move.MoveRight:
+                case Move move:
                     var newState = this.DoMove(move);
 
                     if (newState?.remainingSpeedBoostedMoves >= 0)
@@ -110,34 +107,22 @@
                     }
 
                     return newState;
-                case Move.TurnLeft:
-                    return this.With(dir: (this.dir + 1) & 3);
-                case Move.TurnRight:
-                    return this.With(dir: (this.dir + 3) & 3);
-                case Move.UseManipulatorExtension:
+                case Turn turn:
+                    return this.With(dir: (this.dir + turn.Ddir) & 3);
+                case UseManipulatorExtension useManip:
                     throw new NotImplementedException();
-                case Move.UseFastWheels:
+                case UseFastWheels useFastWheels:
                     return this.fastWheelsCount <= 0
                         ? null
                         : this.With(fastWheelsCount: this.fastWheelsCount - 1, remainingSpeedBoostedMoves: 50);
-                case Move.UseDrill:
+                case UseDrill useDrill:
                     return this.drillsCount <= 0
                         ? null
                         : this.With(drillsCount: this.drillsCount - 1, remainingDrillMoves: 30);
                 default:
-                    throw new ArgumentOutOfRangeException(nameof(move), move.ToString());
+                    throw new ArgumentOutOfRangeException(nameof(command), command.ToString());
             }
         }
-
-        private static (int, int) GetDelta(Move move) =>
-            move switch
-                {
-                Move.MoveUp => (0, 1),
-                Move.MoveDown => (0, -1),
-                Move.MoveLeft => (-1, 0),
-                Move.MoveRight => (1, 0),
-                _ => throw new ArgumentOutOfRangeException(nameof(move)),
-                };
 
         private static (ImHashSet wrappedCells, int wrappedCellsCount) UpdateWrappedCells(
             Map map,
@@ -221,7 +206,8 @@
 
         private State? DoMove(Move move, int timeCost = 1)
         {
-            var (dx, dy) = GetDelta(move);
+            var dx = move.Dx;
+            var dy = move.Dy;
 
             var (newX, newY) = (this.x + dx, this.y + dy);
             if (!this.map.IsFree(newX, newY) &&

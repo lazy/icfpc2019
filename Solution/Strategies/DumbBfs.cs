@@ -14,15 +14,15 @@
             new Point { X = 0, Y = -1 },
         };
 
-        private static readonly Move[] Moves =
+        private static readonly Command[] Moves =
         {
-            Move.MoveRight,
-            Move.MoveLeft,
-            Move.MoveUp,
-            Move.MoveDown,
+            Move.Right,
+            Move.Left,
+            Move.Up,
+            Move.Down,
         };
 
-        public IEnumerable<Move> Solve(Map map)
+        public IEnumerable<Command> Solve(Map map)
         {
             var startPoint = new Point { X = map.StartX, Y = map.StartY };
             var toVisit = map.CellsToVisit.Select(x => new Point { X = x.Item1, Y = x.Item2 }).ToHashSet();
@@ -52,7 +52,7 @@
         {
             var queue = new Queue<Point>();
             var visited = new HashSet<Point>();
-            var pathTrace = new Dictionary<Point, (Move, Point)>();
+            var pathTrace = new Dictionary<Point, (Command, Point)>();
             visited.Add(startPoint);
             queue.Enqueue(startPoint);
 
@@ -117,7 +117,7 @@
         private class BfsResult
         {
             public HashSet<Point> TouchedPoints { get; } = new HashSet<Point>();
-            public List<Move> PathFragment { get; } = new List<Move>();
+            public List<Command> PathFragment { get; } = new List<Command>();
             public Point FirstReachedPoint { get; set; }
         }
     }

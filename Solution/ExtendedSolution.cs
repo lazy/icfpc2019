@@ -15,14 +15,14 @@
             string comment,
             string strategyName,
             string gitCommitId,
-            IReadOnlyList<Move> moves)
+            IReadOnlyList<Command> moves)
             : this(
                 isSuccessful,
                 isSuccessful ? moves.Count() : (int?)null,
                 comment,
                 strategyName,
                 gitCommitId,
-                MovesSerializer.Serialize(moves))
+                CommandsSerializer.Serialize(moves))
         {
         }
 

@@ -6,6 +6,6 @@
     {
         string Name => this.GetType().Name;
 
-        IEnumerable<Move> Solve(Map map);
+        IEnumerable<Command> Solve(Map map);
     }
 }

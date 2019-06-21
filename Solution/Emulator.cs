@@ -10,7 +10,7 @@
         public static ExtendedSolution MakeExtendedSolution(Map map, IStrategy strategy) =>
             MakeExtendedSolution(map, strategy.Name, strategy.Solve(map));
 
-        public static ExtendedSolution MakeExtendedSolution(Map map, string strategyName, IEnumerable<Move> movesEnumerable)
+        public static ExtendedSolution MakeExtendedSolution(Map map, string strategyName, IEnumerable<Command> movesEnumerable)
         {
             try
             {
@@ -35,7 +35,7 @@
             }
         }
 
-        public static bool IsValidSolution(Map map, IReadOnlyList<Move> moves)
+        public static bool IsValidSolution(Map map, IReadOnlyList<Command> moves)
         {
             State? state = new State(map);
             var movesCount = 0;

@@ -61,7 +61,7 @@
 
         private void TestOnSampleMap(string moves, bool isSuccessful, int? timeUnits)
         {
-            var solution = Emulator.MakeExtendedSolution(this.sampleMap, "test", MovesSerializer.Parse(moves));
+            var solution = Emulator.MakeExtendedSolution(this.sampleMap, "test", CommandsSerializer.Parse(moves));
             Assert.Equal(isSuccessful, solution.IsSuccessful);
             Assert.Equal(timeUnits, solution.TimeUnits);
         }
