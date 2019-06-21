@@ -13,7 +13,7 @@
                 @"xxxxxxxxxxxxxxxxxxxxx",
                 @"xxx.....v...........x",
                 @"xxxxxx...###.....xxxx",
-                @"xx.....BFDX##...xxxxx",
+                @"xx.....BFLX##...xxxxx",
                 @"xx................xxx",
                 @"xxxxxxxxxxxxxxxxxxxxx");
 
