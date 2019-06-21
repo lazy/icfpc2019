@@ -97,10 +97,10 @@ namespace Icfpc2019.Solution
                 var boosterPos = ParsePoint(booster.Substring(1));
                 cells[boosterPos.X, boosterPos.Y] = booster[0] switch
                 {
-                    'B' => Map.Cell.BoosterB,
-                    'F' => Map.Cell.BoosterF,
-                    'L' => Map.Cell.BoosterD,
-                    'X' => Map.Cell.BoosterX,
+                    'B' => Map.Cell.ManipulatorExtension,
+                    'F' => Map.Cell.FastWheels,
+                    'L' => Map.Cell.Drill,
+                    'X' => Map.Cell.MysteriousPoint,
                     var ch => throw new Exception(string.Format("Unknown booster type", ch)),
                 };
             }

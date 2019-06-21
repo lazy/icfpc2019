@@ -21,10 +21,10 @@
             Empty,
             Obstacle,
             Edge,
-            BoosterB,
-            BoosterF,
-            BoosterD,
-            BoosterX,
+            ManipulatorExtension,
+            FastWheels,
+            Drill,
+            MysteriousPoint,
         }
 
         public int Width => this.cells.GetLength(0);
@@ -104,10 +104,10 @@
                 '.' => Cell.Empty,
                 '#' => Cell.Obstacle,
                 'x' => Cell.Edge,
-                'B' => Cell.BoosterB,
-                'F' => Cell.BoosterF,
-                'L' => Cell.BoosterD,
-                'X' => Cell.BoosterX,
+                'B' => Cell.ManipulatorExtension,
+                'F' => Cell.FastWheels,
+                'L' => Cell.Drill,
+                'X' => Cell.MysteriousPoint,
                 _ => throw new ArgumentOutOfRangeException($"Invalid cell ascii representation: {c}"),
                 };
 
@@ -117,10 +117,10 @@
                 Cell.Empty => '.',
                 Cell.Obstacle => '#',
                 Cell.Edge => 'x',
-                Cell.BoosterB => 'B',
-                Cell.BoosterF => 'F',
-                Cell.BoosterD => 'L',
-                Cell.BoosterX => 'X',
+                Cell.ManipulatorExtension => 'B',
+                Cell.FastWheels => 'F',
+                Cell.Drill => 'L',
+                Cell.MysteriousPoint => 'X',
                 _ => throw new Exception($"Invalid enum value: {cell}"),
                 };
     }
