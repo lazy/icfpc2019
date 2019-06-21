@@ -2,6 +2,7 @@
 {
     using System;
     using System.Collections.Generic;
+    using System.Diagnostics;
     using System.Linq;
 
     public static class Emulator
@@ -58,8 +59,7 @@
                 (1, 1),
             };
 
-            var dirx = 1;
-            var diry = 0;
+            var dir = 0;
 
             var manipulatorExtensionCount = 0;
             var fastWheelsCount = 0;
@@ -91,10 +91,10 @@
 
                         break;
                     case Move.TurnLeft:
-                        (dirx, diry) = (-diry, dirx);
+                        dir = (dir + 1) & 3;
                         break;
                     case Move.TurnRight:
-                        (dirx, diry) = (diry, -dirx);
+                        dir = (dir + 3) & 3;
                         break;
                     case Move.UseManipulatorExtension:
                         throw new NotImplementedException();
@@ -137,7 +137,6 @@
                 }
                 x += dx;
                 y += dy;
-                MarkVisited();
 
                 switch (map[x, y])
                 {
@@ -205,9 +204,14 @@
                 {
                     var (dx, dy) = delta;
 
-                    // turn
-                    dx = (dx * dirx) + (dy * diry);
-                    dy = (dy * dirx) + (dx * diry);
+                    (dx, dy) = dir switch
+                        {
+                        0 => (dx, dy),
+                        1 => (-dy, dx),
+                        2 => (-dx, -dy),
+                        3 => (dy, -dx),
+                        _ => throw new ArgumentOutOfRangeException(nameof(dir)),
+                        };
 
                     // TODO: check visibility
                     var manipCoord = (x + dx, y + dy);
