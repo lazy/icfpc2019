@@ -2,6 +2,9 @@
 {
     using System;
 
+    using System.Collections.Generic;
+    using System.Text;
+
     public struct Map
     {
         private readonly Cell[,] cells;
@@ -52,13 +55,31 @@
             return new Map(startX, startY, cells);
         }
 
+        public override string ToString()
+        {
+            var rows = new List<string>();
+
+            for (var y = this.Height - 1; y >= 0; --y)
+            {
+                var currentRow = new StringBuilder();
+                for (var x = 0; x < this.Width; ++x)
+                {
+                    currentRow.Append(this.CellToAscii(x, y));
+                }
+
+                rows.Add(currentRow.ToString());
+            }
+
+            return string.Join("\n", rows);
+        }
+
         private static Cell AsciiToCell(char c)
         {
             switch (c)
             {
-                case ' ': return Cell.Empty;
+                case '.': return Cell.Empty;
                 case '#': return Cell.Obstacle;
-                case '!': return Cell.Edge;
+                case 'x': return Cell.Edge;
                 case 'B': return Cell.BoosterB;
                 case 'F': return Cell.BoosterF;
                 case 'D': return Cell.BoosterD;
@@ -66,6 +87,27 @@
                 default:
                     throw new ArgumentOutOfRangeException($"Invalid cell ascii representation: {c}");
             }
+        }
+
+        private char CellToAscii(int x, int y)
+        {
+            if (x == this.StartX && y == this.StartY)
+            {
+                return 'v';
+            }
+
+            var cell = this[x, y];
+            return cell switch
+                {
+                Cell.Empty => '.',
+                Cell.Obstacle => '#',
+                Cell.Edge => 'x',
+                Cell.BoosterB => 'B',
+                Cell.BoosterF => 'F',
+                Cell.BoosterD => 'D',
+                Cell.BoosterX => 'X',
+                _ => throw new Exception(string.Format("Invalid enum value: {}", cell)),
+                };
         }
     }
 }
