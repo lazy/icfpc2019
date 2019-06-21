@@ -22,7 +22,7 @@
             comment,
             strategyName,
             gitCommitId,
-            FormatMoves(moves))
+            MovesSerializer.Serialize(moves))
         {
         }
 
@@ -58,10 +58,5 @@
         /// </summary>
         public void SaveIfBetter(string filename) =>
             throw new NotImplementedException();
-
-        private static string FormatMoves(IReadOnlyList<Move> moves)
-        {
-            throw new NotImplementedException();
-        }
     }
 }

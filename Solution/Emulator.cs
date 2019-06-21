@@ -33,7 +33,11 @@
 
         public static bool IsValidSolution(Map map, List<Move> moves)
         {
-            throw new NotImplementedException();
+            foreach (var move in moves)
+            {
+            }
+
+            return false;
         }
 
         private static class GitInfo
