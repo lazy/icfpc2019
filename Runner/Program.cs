@@ -21,6 +21,8 @@
                     .Select(type => (IStrategy)Activator.CreateInstance(type))
                     .ToArray();
 
+            var totalTimeUnits = 0;
+            var haveFailures = false;
             foreach (var mapFile in Directory.EnumerateFiles("Data/maps", "*.desc"))
             {
                 var mapName = Path.GetFileNameWithoutExtension(mapFile);
@@ -38,6 +40,24 @@
                 var best = ExtendedSolution.Load(extSolutionPath);
                 File.WriteAllText($"Data/solutions/{mapName}.sol", best.Moves);
                 Console.WriteLine($"  BEST ({best.StrategyName}): {best.IsSuccessful}/{best.TimeUnits}");
+
+                if (best.TimeUnits.HasValue)
+                {
+                    totalTimeUnits += best.TimeUnits.Value;
+                }
+                else
+                {
+                    haveFailures = true;
+                }
+            }
+
+            if (haveFailures)
+            {
+                Console.WriteLine("Not printing the time unit sum some solutions were invalid");
+            }
+            else
+            {
+                Console.WriteLine($"TIME UNIT SUM = {totalTimeUnits}");
             }
 
             var submissionFile = $"Data/submission.zip";
