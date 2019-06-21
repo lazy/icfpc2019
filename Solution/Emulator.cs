@@ -54,6 +54,7 @@
 
             var dir = 0;
 
+            var misteriousPointsCount = 0;
             var manipulatorExtensionCount = 0;
             var fastWheelsCount = 0;
             var drillsCount = 0;
@@ -126,7 +127,7 @@
             {
                 var (dx, dy) = GetDelta(move);
                 var (newX, newY) = (x + dx, y + dy);
-                if (!map.CanMoveTo(newX, newY) &&
+                if (!map.IsFree(newX, newY) &&
                     !drilledCells.Contains((newX, newY)) &&
                     !(remainingDrillMoves > 0 && map[newX, newY] == Map.Cell.Obstacle))
                 {
@@ -174,6 +175,15 @@
                         if (!pickedUpBoosterCoords.Contains((x, y)))
                         {
                             ++manipulatorExtensionCount;
+                            pickedUpBoosterCoords.Add((x, y));
+                        }
+
+                        break;
+
+                    case Map.Cell.MysteriousPoint:
+                        if (!pickedUpBoosterCoords.Contains((x, y)))
+                        {
+                            ++misteriousPointsCount;
                             pickedUpBoosterCoords.Add((x, y));
                         }
 
@@ -241,7 +251,8 @@
 
                     void Add(int dx, int dy)
                     {
-                        if (map.CanMoveTo(x + dx, y + dy))
+                        int y1 = y + dy;
+                        if (map.IsFree(x + dx, y1))
                         {
                             queue.Enqueue((x + dx, y + dy));
                         }
