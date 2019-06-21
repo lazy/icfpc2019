@@ -4,7 +4,7 @@
 
     public interface IStrategy
     {
-        string Name { get; }
+        string Name => this.GetType().Name;
 
         IEnumerable<Move> Solve(Map map);
     }
