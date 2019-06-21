@@ -110,7 +110,9 @@
                 case Turn turn:
                     return this.With(dir: (this.dir + turn.Ddir) & 3);
                 case UseManipulatorExtension useManip:
-                    throw new NotImplementedException();
+                    return this.manipulatorExtensionCount <= 0
+                        ? null
+                        : this.AttachManip(useManip);
                 case UseFastWheels useFastWheels:
                     return this.fastWheelsCount <= 0
                         ? null
@@ -135,16 +137,7 @@
         {
             foreach (var delta in manipConfig)
             {
-                var (dx, dy) = delta;
-
-                (dx, dy) = dir switch
-                    {
-                    0 => (dx, dy),
-                    1 => (-dy, dx),
-                    2 => (-dx, -dy),
-                    3 => (dy, -dx),
-                    _ => throw new ArgumentOutOfRangeException(nameof(dir)),
-                    };
+                var (dx, dy) = TurnManip(dir, delta);
 
                 // TODO: check visibility
                 var manipCoord = (x + dx, y + dy);
@@ -156,6 +149,19 @@
             }
 
             return (wrappedCells, wrappedCellsCount);
+        }
+
+        private static (int, int) TurnManip(int dir, (int, int) manipRelativeCoord)
+        {
+            var (dx, dy) = manipRelativeCoord;
+            return dir switch
+                {
+                0 => (dx, dy),
+                1 => (-dy, dx),
+                2 => (-dx, -dy),
+                3 => (dy, -dx),
+                _ => throw new ArgumentOutOfRangeException(nameof(dir)),
+                };
         }
 
 #pragma warning disable SA1011
@@ -250,6 +256,40 @@
                 this.pickedUpBoosterCoords.TryFind((newX, newY), out var _)
                     ? (this.pickedUpBoosterCoords, counter)
                     : (this.pickedUpBoosterCoords.AddOrUpdate((newX, newY), true), counter + 1);
+        }
+
+        private State? AttachManip(UseManipulatorExtension useManip)
+        {
+            var revDir = (4 - this.dir) & 3;
+            var (dx, dy) = TurnManip(revDir, (useManip.Dx, useManip.Dy));
+            var can = false;
+            foreach (var oldCoord in this.manipConfig)
+            {
+                var (oldDx, oldDy) = oldCoord;
+                var dist = Math.Abs(dx - oldDx) + Math.Abs(dy - oldDy);
+                if (dist == 0)
+                {
+                    return null;
+                }
+
+                if (dist == 1)
+                {
+                    can = true;
+                }
+            }
+
+            if (!can)
+            {
+                return null;
+            }
+
+            var newManipConfig = new (int, int)[this.manipConfig.Length + 1];
+            Array.Copy(this.manipConfig, newManipConfig, this.manipConfig.Length);
+            newManipConfig[this.manipConfig.Length] = (dx, dy);
+
+            return this.With(
+                manipulatorExtensionCount: this.manipulatorExtensionCount - 1,
+                manipConfig: newManipConfig);
         }
     }
 }

@@ -20,7 +20,7 @@
             @"xv.........x",
             @"xxxxxxxxxxxx");
 
-        [Fact(Skip="Manipulator extension is not supported yet in the emulator")]
+        [Fact]
         public void SampleSolution1IsValid() =>
             this.TestOnSampleMap(
                 "WDWB(1,2)DSQDB(-3,1)DDDWWWWWWWSSEDSSDWWESSSSSAAAAAQQWWWWWWW",
