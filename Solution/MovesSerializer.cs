@@ -26,8 +26,8 @@
                         'D' => Move.MoveRight,
                         'Q' => Move.TurnLeft,
                         'E' => Move.TurnRight,
-                        'F' => Move.UseBoosterF,
-                        'L' => Move.UseBoosterL,
+                        'F' => Move.UseFastWheels,
+                        'L' => Move.UseDrill,
                         _ => throw new ArgumentOutOfRangeException(nameof(moves), $"Unknown move: {move}"),
                         };
                     ++i;
@@ -47,9 +47,9 @@
                 Move.MoveRight => "D",
                 Move.TurnLeft => "Q",
                 Move.TurnRight => "E",
-                Move.UseBoosterB => throw new NotImplementedException(),
-                Move.UseBoosterF => "F",
-                Move.UseBoosterL => "L",
+                Move.UseManipulatorExtension => throw new NotImplementedException(),
+                Move.UseFastWheels => "F",
+                Move.UseDrill => "L",
                 _ => throw new ArgumentOutOfRangeException($"Unexpected move: {move}"),
                 };
     }

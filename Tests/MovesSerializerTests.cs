@@ -18,15 +18,15 @@
                 Move.MoveRight,
                 Move.TurnLeft,
                 Move.TurnRight,
-                Move.UseBoosterF,
-                Move.UseBoosterL);
+                Move.UseFastWheels,
+                Move.UseDrill);
 
         [Fact]
         public void UseBoostBWorks() =>
             TestSerialization(
                 "B(-1,15)B(1,1)",
-                Move.UseBoosterB,
-                Move.UseBoosterB);
+                Move.UseManipulatorExtension,
+                Move.UseManipulatorExtension);
 
         private static void TestSerialization(string serializedMoves, params Move[] moves)
         {
