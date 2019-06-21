@@ -92,7 +92,11 @@
             // Debug.Assert(this.wrappedCellsCount == this.wrappedCells.Enumerate().Count(), "Counts do not match!");
         }
 
+        public int X => this.x;
+        public int Y => this.y;
         public int WrappedCellsCount => this.wrappedCellsCount;
+
+        public bool IsWrapped(int x, int y) => this.wrappedCells.TryFind((x, y), out var _);
 
         public State? Next(Command command)
         {
