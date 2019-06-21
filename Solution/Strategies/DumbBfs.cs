@@ -32,7 +32,7 @@
                 var result = this.RunBfs(map, startPoint, toVisit);
                 if (result == null)
                 {
-                    throw new Exception("The BFS should have return a result");
+                    throw new Exception("The BFS should have returned a result");
                 }
 
                 foreach (var m in result.PathFragment)
