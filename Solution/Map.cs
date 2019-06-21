@@ -1,8 +1,6 @@
 ﻿namespace Icfpc2019.Solution
 {
     using System;
-    using System.Collections.Generic;
-    using System.Text;
 
     public struct Map
     {
@@ -35,43 +33,39 @@
 
         public Cell this[int i, int j] => this.cells[i, j];
 
-        public override string ToString()
+        public static Map FromAscii(int startX, int startY, params string[] lines)
         {
-            var rows = new List<string>();
-
-            for (var y = this.Height - 1; y >= 0; --y)
+            var cells = new Cell[lines.Length, lines[0].Length];
+            for (var i = 0; i < lines.Length; ++i)
             {
-                var currentRow = new StringBuilder();
-                for (var x = 0; x < this.Width; ++x)
+                if (lines[i].Length != lines[0].Length)
                 {
-                    currentRow.Append(this.CoordsToChar(x, y));
+                    throw new ArgumentException("All lines must be of equal length");
                 }
 
-                rows.Add(currentRow.ToString());
+                for (var j = 0; j < lines[i].Length; ++j)
+                {
+                    cells[i, j] = AsciiToCell(lines[i][j]);
+                }
             }
 
-            return string.Join("\n", rows);
+            return new Map(startX, startY, cells);
         }
 
-        private char CoordsToChar(int x, int y)
+        private static Cell AsciiToCell(char c)
         {
-            if (x == this.StartX && y == this.StartY)
+            switch (c)
             {
-                return 'v';
+                case ' ': return Cell.Empty;
+                case '#': return Cell.Obstacle;
+                case '!': return Cell.Edge;
+                case 'B': return Cell.BoosterB;
+                case 'F': return Cell.BoosterF;
+                case 'D': return Cell.BoosterD;
+                case 'X': return Cell.BoosterX;
+                default:
+                    throw new ArgumentOutOfRangeException($"Invalid cell ascii representation: {c}");
             }
-
-            var cell = this[x, y];
-            return cell switch
-                {
-                Cell.Empty => '.',
-                Cell.Obstacle => '#',
-                Cell.Edge => 'x',
-                Cell.BoosterB => 'B',
-                Cell.BoosterF => 'F',
-                Cell.BoosterD => 'D',
-                Cell.BoosterX => 'X',
-                _ => throw new Exception(string.Format("Invalid enum value: {}", cell)),
-                };
         }
     }
 }
