@@ -19,21 +19,21 @@
                 @"xx................xxx",
                 @"xxxxxxxxxxxxxxxxxxxxx");
 
-            Assert.Equal(100, map.Width);
+            Assert.Equal(21, map.Width);
             Assert.Equal(6, map.Height);
 
             Assert.Equal(Map.Cell.Edge, map[0, 0]);
             Assert.Equal(Map.Cell.Edge, map[1, 1]);
             Assert.Equal(Map.Cell.Empty, map[2, 1]);
 
-            Assert.Equal(Map.Cell.Obstacle, map[3, 9]);
-            Assert.Equal(Map.Cell.Obstacle, map[3, 11]);
-            Assert.Equal(Map.Cell.Obstacle, map[2, 12]);
+            Assert.Equal(Map.Cell.Obstacle, map[9, 3]);
+            Assert.Equal(Map.Cell.Obstacle, map[11, 3]);
+            Assert.Equal(Map.Cell.Obstacle, map[12, 2]);
 
-            Assert.Equal(Map.Cell.BoosterB, map[2, 7]);
-            Assert.Equal(Map.Cell.BoosterF, map[2, 8]);
-            Assert.Equal(Map.Cell.BoosterD, map[2, 9]);
-            Assert.Equal(Map.Cell.BoosterX, map[2, 10]);
+            Assert.Equal(Map.Cell.BoosterB, map[7, 2]);
+            Assert.Equal(Map.Cell.BoosterF, map[8, 2]);
+            Assert.Equal(Map.Cell.BoosterD, map[9, 2]);
+            Assert.Equal(Map.Cell.BoosterX, map[10, 2]);
         }
     }
 }

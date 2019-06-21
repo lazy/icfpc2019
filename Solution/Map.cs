@@ -27,30 +27,34 @@
             BoosterX,
         }
 
-        public int Width => this.cells.GetLength(1);
-        public int Height => this.cells.GetLength(0);
+        public int Width => this.cells.GetLength(0);
+        public int Height => this.cells.GetLength(1);
 
         public int StartX { get; }
 
         public int StartY { get; }
 
-        public Cell this[int i, int j] => this.cells[i, j];
+        public Cell this[int x, int y] => this.cells[x, y];
 
         public static Map FromAscii(int startX, int startY, params string[] lines)
         {
-            var cells = new Cell[lines.Length, lines[0].Length];
+            // matrix is transposed, because our coords are (x, y) but
+            // visual coords are (y, x)
+            var cells = new Cell[lines[0].Length, lines.Length];
 
-            // Turn map upside down so we can use convenient coords
-            for (var i = lines.Length - 1; i >= 0; --i)
+            // Turn map upside down and transpose so we can use convenient coords
+            for (var reverseY = 0; reverseY < lines.Length; ++reverseY)
             {
-                if (lines[i].Length != lines[0].Length)
+                var y = lines.Length - reverseY - 1;
+                var line = lines[reverseY];
+                if (line.Length != lines[0].Length)
                 {
                     throw new ArgumentException("All lines must be of equal length");
                 }
 
-                for (var j = 0; j < lines[i].Length; ++j)
+                for (var x = 0; x < line.Length; ++x)
                 {
-                    cells[i, j] = AsciiToCell(lines[i][j]);
+                    cells[x, y] = AsciiToCell(line[x]);
                 }
             }
 
