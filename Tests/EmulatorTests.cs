@@ -20,7 +20,7 @@
             @"xv.........x",
             @"xxxxxxxxxxxx");
 
-        [Fact]
+        [Fact(Skip="Manipulator extension is not supported yet in the emulator")]
         public void SampleSolution1IsValid() =>
             this.TestOnSampleMap(
                 "WDWB(1,2)DSQDB(-3,1)DDDWWWWWWWSSEDSSDWWESSSSSAAAAAQQWWWWWWW",
@@ -40,6 +40,24 @@
                 "WDWAWSSFDDDDDQQWLAAAAAWEEDDDDDWQQAAAAAWEEDDDDD",
                 true,
                 46);
+
+        [Fact]
+        public void EmptySolutionIsInvalid()
+        {
+            this.TestOnSampleMap(string.Empty, false, null);
+        }
+
+        [Fact]
+        public void StupidSolutionIsInvalid()
+        {
+            this.TestOnSampleMap("ASDFFAS", false, null);
+        }
+
+        [Fact]
+        public void MovingIntoWallsIsInvalid()
+        {
+            this.TestOnSampleMap("WDWAWSSFDDDDDQQWLAAAAAWEEDDDDDWQQAAAAAWEEDDDDDDDDD", false, null);
+        }
 
         private void TestOnSampleMap(string moves, bool isSuccessful, int? timeUnits)
         {

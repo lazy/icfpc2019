@@ -21,7 +21,7 @@
                 Move.UseFastWheels,
                 Move.UseDrill);
 
-        [Fact]
+        [Fact(Skip="Serializing manipulator extensions is not supported yet")]
         public void UseBoostBWorks() =>
             TestSerialization(
                 "B(-1,15)B(1,1)",
