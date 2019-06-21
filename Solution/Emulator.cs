@@ -54,10 +54,11 @@
 
             var dir = 0;
 
-            var misteriousPointsCount = 0;
             var manipulatorExtensionCount = 0;
             var fastWheelsCount = 0;
             var drillsCount = 0;
+            var misteriousPointsCount = 0;
+            var teleportsCount = 0;
 
             var remainingSpeedBoostedMoves = 0;
             var remainingDrillMoves = 0;
@@ -184,6 +185,15 @@
                         if (!pickedUpBoosterCoords.Contains((x, y)))
                         {
                             ++misteriousPointsCount;
+                            pickedUpBoosterCoords.Add((x, y));
+                        }
+
+                        break;
+
+                    case Map.Cell.Teleport:
+                        if (!pickedUpBoosterCoords.Contains((x, y)))
+                        {
+                            ++teleportsCount;
                             pickedUpBoosterCoords.Add((x, y));
                         }
 

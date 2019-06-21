@@ -24,6 +24,7 @@
             FastWheels,
             Drill,
             MysteriousPoint,
+            Teleport,
         }
 
         public int Width => this.cells.GetLength(0);

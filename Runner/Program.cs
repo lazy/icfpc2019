@@ -37,7 +37,7 @@
 
                 var best = ExtendedSolution.Load(extSolutionPath);
                 File.WriteAllText($"Data/solutions/{mapName}.sol", best.Moves);
-                Console.WriteLine($"  BEST ({best.StrategyName}: {best.IsSuccessful}/{best.TimeUnits}");
+                Console.WriteLine($"  BEST ({best.StrategyName}): {best.IsSuccessful}/{best.TimeUnits}");
             }
 
             var submissionFile = $"Data/submission.zip";

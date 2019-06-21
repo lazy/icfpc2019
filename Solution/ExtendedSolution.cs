@@ -1,6 +1,5 @@
 ﻿namespace Icfpc2019.Solution
 {
-    using System;
     using System.Collections.Generic;
     using System.IO;
     using System.Linq;
