@@ -6,25 +6,19 @@
 
     public class Emulator
     {
-        public static bool IsValidSolution(Map map, List<Move> moves)
-        {
-            foreach (var move in moves)
-            {
-            }
+        public static ExtendedSolution MakeExtendedSolution(Map map, IStrategy strategy) =>
+            MakeExtendedSolution(map, strategy.Name, strategy.Solve(map));
 
-            return false;
-        }
-
-        public static ExtendedSolution MakeExtendedSolution(Map map, IStrategy strategy)
+        public static ExtendedSolution MakeExtendedSolution(Map map, string strategyName, IEnumerable<Move> movesEnumerable)
         {
             try
             {
-                var moves = strategy.Solve(map).ToList();
+                var moves = movesEnumerable.ToArray();
                 var isValid = IsValidSolution(map, moves);
                 return new ExtendedSolution(
                     isSuccessful: isValid,
                     comment: isValid ? "valid" : "invalid",
-                    strategyName: strategy.Name,
+                    strategyName: strategyName,
                     gitCommitId: GitInfo.GitCommit,
                     moves: moves);
             }
@@ -34,10 +28,19 @@
                     isSuccessful: false,
                     timeUnits: null,
                     comment: ex.Message.Replace("\n", "\\n"),
-                    strategyName: strategy.Name,
+                    strategyName: strategyName,
                     gitCommitId: GitInfo.GitCommit,
                     moves: string.Empty);
             }
+        }
+
+        public static bool IsValidSolution(Map map, IReadOnlyList<Move> moves)
+        {
+            foreach (var move in moves)
+            {
+            }
+
+            return false;
         }
 
         private static class GitInfo
