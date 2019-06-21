@@ -55,5 +55,14 @@ xv.....xx.
 ".Trim();
             Assert.Equal(expectedMap.Replace("\r\n", "\n"), map.ToString());
         }
+
+        [Fact]
+        public void ParsesAllRealMaps()
+        {
+            foreach (var mapFile in Directory.EnumerateFiles(@"..\..\..\..\Data\maps", "*.desc"))
+            {
+                MapParser.Parse(File.ReadAllText(mapFile));
+            }
+        }
     }
 }
