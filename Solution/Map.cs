@@ -84,7 +84,7 @@
 
         public bool IsFree(int x, int y)
         {
-            if (x < 0 || y < 0)
+            if (x < 0 || y < 0 || x >= this.Width || y >= this.Height)
             {
                 return false;
             }
