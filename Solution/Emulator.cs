@@ -148,59 +148,38 @@
                             throw new InvalidOperationException();
                         }
 
-                        if (drilledCells.Contains((x, y)))
+                        if (!drilledCells.Contains((x, y)))
                         {
                             drilledCells.Add((x, y));
                         }
 
                         break;
                     case Map.Cell.FastWheels:
-                        if (!pickedUpBoosterCoords.Contains((x, y)))
-                        {
-                            ++fastWheelsCount;
-                            pickedUpBoosterCoords.Add((x, y));
-                        }
-
+                        CollectBooster(ref fastWheelsCount);
                         break;
-
                     case Map.Cell.Drill:
-                        if (!pickedUpBoosterCoords.Contains((x, y)))
-                        {
-                            ++drillsCount;
-                            pickedUpBoosterCoords.Add((x, y));
-                        }
-
+                        CollectBooster(ref drillsCount);
                         break;
-
                     case Map.Cell.ManipulatorExtension:
-                        if (!pickedUpBoosterCoords.Contains((x, y)))
-                        {
-                            ++manipulatorExtensionCount;
-                            pickedUpBoosterCoords.Add((x, y));
-                        }
-
+                        CollectBooster(ref manipulatorExtensionCount);
                         break;
-
                     case Map.Cell.MysteriousPoint:
-                        if (!pickedUpBoosterCoords.Contains((x, y)))
-                        {
-                            ++misteriousPointsCount;
-                            pickedUpBoosterCoords.Add((x, y));
-                        }
-
+                        CollectBooster(ref misteriousPointsCount);
                         break;
-
                     case Map.Cell.Teleport:
-                        if (!pickedUpBoosterCoords.Contains((x, y)))
-                        {
-                            ++teleportsCount;
-                            pickedUpBoosterCoords.Add((x, y));
-                        }
-
+                        CollectBooster(ref teleportsCount);
                         break;
-
                     default:
                         throw new InvalidOperationException($"Unexpected cell: {map[x, y]}");
+                }
+
+                void CollectBooster(ref int counter)
+                {
+                    if (!pickedUpBoosterCoords.Contains((x, y)))
+                    {
+                        ++counter;
+                        pickedUpBoosterCoords.Add((x, y));
+                    }
                 }
 
                 return true;
