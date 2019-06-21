@@ -6,4 +6,8 @@
     <AssemblyName>Icfpc2019.Solution</AssemblyName>
   </PropertyGroup>
 
+  <ItemGroup>
+    <PackageReference Include="ImTools.dll" Version="1.0.0" />
+  </ItemGroup>
+
 </Project>

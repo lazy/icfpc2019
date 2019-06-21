@@ -30,7 +30,7 @@
             Teleport,
         }
 
-        public IEnumerable<(int, int)> CellsToVisit => this.cellsToVisit;
+        public IReadOnlyCollection<(int, int)> CellsToVisit => this.cellsToVisit;
         public int Height => this.cells.GetLength(1);
 
         public int StartX { get; }
