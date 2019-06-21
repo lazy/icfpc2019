@@ -2,7 +2,7 @@
 {
     using System;
     using System.Collections.Generic;
-    using System.Diagnostics;
+    using System.Linq;
 
     public class DumbBfs : IStrategy
     {
@@ -25,64 +25,60 @@
         public IEnumerable<Move> Solve(Map map)
         {
             var startPoint = new Point { X = map.StartX, Y = map.StartY };
-            var pathFragment = new List<Move>();
-            Point? reachedPoint;
-            var toVisit = this.CollectReachablePoints(map, startPoint, null, pathFragment, out reachedPoint);
+            var toVisit = map.CellsToVisit.Select(x => new Point { X = x.Item1, Y = x.Item2 }).ToHashSet();
 
             while (toVisit.Count > 0)
             {
-                var touched = this.CollectReachablePoints(map, startPoint, toVisit, pathFragment, out reachedPoint);
-                foreach (var m in pathFragment)
+                var result = this.RunBfs(map, startPoint, toVisit);
+                if (result == null)
+                {
+                    throw new Exception("The BFS should have return a result");
+                }
+
+                foreach (var m in result.PathFragment)
                 {
                     yield return m;
                 }
 
-                if (reachedPoint == null)
-                {
-                    throw new Exception("The BFS should have return a point from toVisit");
-                }
-
-                startPoint = reachedPoint.Value;
-                foreach (var t in touched)
+                startPoint = result.FirstReachedPoint;
+                foreach (var t in result.TouchedPoints)
                 {
                     toVisit.Remove(t);
                 }
             }
         }
 
-        private HashSet<Point> CollectReachablePoints(Map map, Point startPoint, HashSet<Point>? toVisit, List<Move> pathFragment, out Point? reachedPoint)
+        private BfsResult? RunBfs(Map map, Point startPoint, HashSet<Point> toVisit)
         {
-            reachedPoint = null;
-
             var queue = new Queue<Point>();
             var visited = new HashSet<Point>();
             var pathTrace = new Dictionary<Point, (Move, Point)>();
-            var touchedPoints = new HashSet<Point>();
             visited.Add(startPoint);
             queue.Enqueue(startPoint);
-
-            var result = new HashSet<Point>();
 
             while (queue.Count > 0)
             {
                 var curPoint = queue.Dequeue();
 
-                if (toVisit != null && toVisit.Contains(curPoint))
+                if (toVisit.Contains(curPoint))
                 {
+                    var result = new BfsResult
+                    {
+                        FirstReachedPoint = curPoint,
+                    };
                     var pathPoint = curPoint;
-                    pathFragment.Clear();
 
                     Action<Point> addTouchedPoints = point =>
                     {
                         // FIXME: this code assumes we face right and do not rotate ever
-                        touchedPoints.Add(point);
+                        result.TouchedPoints.Add(point);
 
                         for (var tdy = -1; tdy <= 1; ++tdy)
                         {
                             var touchCandidate = new Point { X = point.X + 1, Y = point.Y + tdy };
                             if (map.IsFree(touchCandidate.X, touchCandidate.Y))
                             {
-                                touchedPoints.Add(touchCandidate);
+                                result.TouchedPoints.Add(touchCandidate);
                             }
                         }
                     };
@@ -91,15 +87,15 @@
                     while (pathTrace.ContainsKey(pathPoint))
                     {
                         var tr = pathTrace[pathPoint];
-                        pathFragment.Add(tr.Item1);
+                        result.PathFragment.Add(tr.Item1);
                         pathPoint = tr.Item2;
                         addTouchedPoints(pathPoint);
                     }
 
-                    pathFragment.Reverse();
-                    reachedPoint = curPoint;
-                    touchedPoints.Add(curPoint);
-                    return touchedPoints;
+                    result.PathFragment.Reverse();
+                    result.FirstReachedPoint = curPoint;
+                    result.TouchedPoints.Add(curPoint);
+                    return result;
                 }
 
                 for (var idx = 0; idx < Deltas.Length; ++idx)
@@ -110,14 +106,19 @@
                     {
                         visited.Add(nextPoint);
                         queue.Enqueue(nextPoint);
-                        result.Add(nextPoint);
                         pathTrace.Add(nextPoint, (Moves[idx], curPoint));
                     }
                 }
             }
 
-            Trace.Assert(toVisit == null);
-            return result;
+            return null;
+        }
+
+        private class BfsResult
+        {
+            public HashSet<Point> TouchedPoints { get; } = new HashSet<Point>();
+            public List<Move> PathFragment { get; } = new List<Move>();
+            public Point FirstReachedPoint { get; set; }
         }
     }
 }

@@ -37,7 +37,7 @@
 
         public static bool IsValidSolution(Map map, IReadOnlyList<Move> moves)
         {
-            var cellsToVisit = FindCellsToVisit(map);
+            var cellsToVisit = new HashSet<(int, int)>(map.CellsToVisit);
             var pickedUpBoosterCoords = new HashSet<(int, int)>();
             var drilledCells = new HashSet<(int, int)>();
 
@@ -218,38 +218,6 @@
                     }
                 }
             }
-        }
-
-        private static HashSet<(int, int)> FindCellsToVisit(Map map)
-        {
-            var result = new HashSet<(int, int)>();
-            var queue = new Queue<(int, int)>();
-            queue.Enqueue((map.StartX, map.StartY));
-
-            while (queue.Count > 0)
-            {
-                var point = queue.Dequeue();
-                var (x, y) = point;
-                if (!result.Contains(point))
-                {
-                    result.Add(point);
-                    Add(-1, 0);
-                    Add(1, 0);
-                    Add(0, -1);
-                    Add(0, 1);
-
-                    void Add(int dx, int dy)
-                    {
-                        int y1 = y + dy;
-                        if (map.IsFree(x + dx, y1))
-                        {
-                            queue.Enqueue((x + dx, y + dy));
-                        }
-                    }
-                }
-            }
-
-            return result;
         }
 
         private static class GitInfo

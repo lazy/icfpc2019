@@ -4,15 +4,18 @@
     using System.Collections.Generic;
     using System.Text;
 
-    public struct Map
+    public class Map
     {
         private readonly Cell[,] cells;
+        private readonly HashSet<(int, int)> cellsToVisit;
 
         public Map(int startX, int startY, Cell[,] cells)
         {
             this.StartX = startX;
             this.StartY = startY;
             this.cells = cells;
+            this.cellsToVisit = new HashSet<(int, int)>();
+            this.FindCellsToVisit();
         }
 
         public enum Cell
@@ -27,12 +30,14 @@
             Teleport,
         }
 
-        public int Width => this.cells.GetLength(0);
+        public IEnumerable<(int, int)> CellsToVisit => this.cellsToVisit;
         public int Height => this.cells.GetLength(1);
 
         public int StartX { get; }
 
         public int StartY { get; }
+
+        public int Width => this.cells.GetLength(0);
 
         public Cell this[int x, int y] => this.cells[x, y];
 
@@ -134,5 +139,35 @@
                 Cell.MysteriousPoint => 'X',
                 _ => throw new Exception($"Invalid enum value: {cell}"),
                 };
+
+        private void FindCellsToVisit()
+        {
+            var queue = new Queue<(int, int)>();
+            queue.Enqueue((this.StartX, this.StartY));
+
+            while (queue.Count > 0)
+            {
+                var point = queue.Dequeue();
+                var (x, y) = point;
+                if (!this.cellsToVisit.Contains(point))
+                {
+                    this.cellsToVisit.Add(point);
+                    Add(-1, 0);
+                    Add(1, 0);
+                    Add(0, -1);
+                    Add(0, 1);
+
+                    void Add(int dx, int dy)
+                    {
+                        int x1 = x + dx;
+                        int y1 = y + dy;
+                        if (this.IsFree(x1, y1))
+                        {
+                            queue.Enqueue((x1, y1));
+                        }
+                    }
+                }
+            }
+        }
     }
 }
