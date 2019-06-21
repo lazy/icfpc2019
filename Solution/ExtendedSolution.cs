@@ -16,13 +16,13 @@
             string strategyName,
             string gitCommitId,
             IReadOnlyList<Move> moves)
-        : this(
-            isSuccessful,
-            isSuccessful ? moves.Count() : (int?)null,
-            comment,
-            strategyName,
-            gitCommitId,
-            MovesSerializer.Serialize(moves))
+            : this(
+                isSuccessful,
+                isSuccessful ? moves.Count() : (int?)null,
+                comment,
+                strategyName,
+                gitCommitId,
+                MovesSerializer.Serialize(moves))
         {
         }
 
@@ -42,12 +42,13 @@
             this.Moves = moves;
         }
 
-        public bool IsSuccessful { get; }
-        public int? TimeUnits { get; }
         public string? Comment { get; }
-        public string StrategyName { get; }
         public string GitCommitId { get; }
+
+        public bool IsSuccessful { get; }
         public string Moves { get; }
+        public string StrategyName { get; }
+        public int? TimeUnits { get; }
 
         public ExtendedSolution Load(string filename) =>
             throw new NotImplementedException();

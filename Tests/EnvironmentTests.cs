@@ -17,10 +17,10 @@ namespace Icfpc2019.Tests
             var tuple = (1, "hello");
 
             var switchResult = tuple switch
-            {
+                {
                 (var a, var b) when a % 2 == 1 && b.StartsWith("h") => "right",
                 _ => "wrong"
-            };
+                };
 
             Assert.Equal("right", switchResult);
         }

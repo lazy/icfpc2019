@@ -32,6 +32,22 @@ namespace Icfpc2019.Solution
             return new Map(startPoint.X, startPoint.Y, cells);
         }
 
+        private static void ParseBoosters(string description, Map.Cell[,] cells)
+        {
+            foreach (var booster in description.Split(';'))
+            {
+                var boosterPos = ParsePoint(booster.Substring(1));
+                cells[boosterPos.X, boosterPos.Y] = booster[0] switch
+                    {
+                    'B' => Map.Cell.ManipulatorExtension,
+                    'F' => Map.Cell.FastWheels,
+                    'L' => Map.Cell.Drill,
+                    'X' => Map.Cell.MysteriousPoint,
+                    var ch => throw new Exception(string.Format("Unknown booster type", ch)),
+                    };
+            }
+        }
+
         private static List<Point> ParseContours(string description, AllPoints allPoints, bool inside)
         {
             var contours = description.Split(';');
@@ -90,22 +106,6 @@ namespace Icfpc2019.Solution
             return result;
         }
 
-        private static void ParseBoosters(string description, Map.Cell[,] cells)
-        {
-            foreach (var booster in description.Split(';'))
-            {
-                var boosterPos = ParsePoint(booster.Substring(1));
-                cells[boosterPos.X, boosterPos.Y] = booster[0] switch
-                {
-                    'B' => Map.Cell.ManipulatorExtension,
-                    'F' => Map.Cell.FastWheels,
-                    'L' => Map.Cell.Drill,
-                    'X' => Map.Cell.MysteriousPoint,
-                    var ch => throw new Exception(string.Format("Unknown booster type", ch)),
-                };
-            }
-        }
-
         private static Point ParsePoint(string description)
         {
             var tokens = description.Trim('(', ')').Split(',');
@@ -146,11 +146,11 @@ namespace Icfpc2019.Solution
                 this.Points = new HashSet<Point>();
             }
 
-            public HashSet<Point> Points { get; }
-
             public int MaxX { get; private set; }
 
             public int MaxY { get; private set; }
+
+            public HashSet<Point> Points { get; }
 
             public bool Update(Point p)
             {
