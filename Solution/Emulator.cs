@@ -2,7 +2,7 @@
 {
     using System;
     using System.Collections.Generic;
-    using System.Diagnostics;
+
     using System.Linq;
 
     public static class Emulator
@@ -57,7 +57,7 @@
             var manipulatorExtensionCount = 0;
             var fastWheelsCount = 0;
             var drillsCount = 0;
-            var misteriousPointsCount = 0;
+            var mysteriousPointsCount = 0;
             var teleportsCount = 0;
 
             var remainingSpeedBoostedMoves = 0;
@@ -164,7 +164,7 @@
                         CollectBooster(ref manipulatorExtensionCount);
                         break;
                     case Map.Cell.MysteriousPoint:
-                        CollectBooster(ref misteriousPointsCount);
+                        CollectBooster(ref mysteriousPointsCount);
                         break;
                     case Map.Cell.Teleport:
                         CollectBooster(ref teleportsCount);
