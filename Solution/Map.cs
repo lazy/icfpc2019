@@ -106,7 +106,7 @@
                 'x' => Cell.Edge,
                 'B' => Cell.BoosterB,
                 'F' => Cell.BoosterF,
-                'D' => Cell.BoosterD,
+                'L' => Cell.BoosterD,
                 'X' => Cell.BoosterX,
                 _ => throw new ArgumentOutOfRangeException($"Invalid cell ascii representation: {c}"),
                 };
@@ -119,7 +119,7 @@
                 Cell.Edge => 'x',
                 Cell.BoosterB => 'B',
                 Cell.BoosterF => 'F',
-                Cell.BoosterD => 'D',
+                Cell.BoosterD => 'L',
                 Cell.BoosterX => 'X',
                 _ => throw new Exception($"Invalid enum value: {cell}"),
                 };

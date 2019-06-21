@@ -10,6 +10,6 @@
         TurnRight,
         UseBoosterB, // TODO: coords
         UseBoosterF,
-        UseBoosterD,
+        UseBoosterL,
     }
 }
