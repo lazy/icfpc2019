@@ -78,6 +78,11 @@
 
         public bool IsFree(int x, int y)
         {
+            if (x < 0 || y < 0)
+            {
+                return false;
+            }
+
             var cell = this[x, y];
             return cell != Cell.Edge && cell != Cell.Obstacle;
         }
