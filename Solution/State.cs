@@ -1,8 +1,6 @@
 ﻿namespace Icfpc2019.Solution
 {
     using System;
-    using System.Diagnostics;
-    using System.Linq;
     using System.Runtime.CompilerServices;
 
     // Key doesn't really matter
@@ -91,7 +89,7 @@
             this.remainingSpeedBoostedMoves = remainingSpeedBoostedMoves;
             this.remainingDrillMoves = remainingDrillMoves;
 
-            Debug.Assert(this.wrappedCellsCount == this.wrappedCells.Enumerate().Count(), "Counts do not match!");
+            // Debug.Assert(this.wrappedCellsCount == this.wrappedCells.Enumerate().Count(), "Counts do not match!");
         }
 
         public int WrappedCellsCount => this.wrappedCellsCount;

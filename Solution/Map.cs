@@ -16,6 +16,18 @@
             this.cells = cells;
             this.cellsToVisit = new HashSet<(int, int)>();
             this.FindCellsToVisit();
+
+            // Mark all inaccessible free cells as edge
+            for (var x = 0; x < this.Width; ++x)
+            {
+                for (var y = 0; y < this.Height; ++y)
+                {
+                    if (this.IsFree(x, y) && !this.cellsToVisit.Contains((x, y)))
+                    {
+                        this.cells[x, y] = Cell.Edge;
+                    }
+                }
+            }
         }
 
         public enum Cell
