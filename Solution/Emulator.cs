@@ -7,15 +7,6 @@
 
     public static class Emulator
     {
-        public static bool IsValidSolution(Map map, IReadOnlyList<Move> moves)
-        {
-            foreach (var move in moves)
-            {
-            }
-
-            return false;
-        }
-
         public static ExtendedSolution MakeExtendedSolution(Map map, IStrategy strategy) =>
             MakeExtendedSolution(map, strategy.Name, strategy.Solve(map));
 
@@ -44,6 +35,8 @@
             }
         }
 
+        public static bool IsValidSolution(Map map, IReadOnlyList<Move> moves)
+        {
             var cellsToVisit = FindCellsToVisit(map);
             var pickedUpBoosterCoords = new HashSet<(int, int)>();
             var drilledCells = new HashSet<(int, int)>();
@@ -70,6 +63,8 @@
 
             MarkVisited();
 
+            foreach (var move in moves)
+            {
                 switch (move)
                 {
                     case Move.MoveUp:
@@ -123,6 +118,8 @@
                 --remainingSpeedBoostedMoves;
                 --remainingDrillMoves;
                 MarkVisited();
+            }
+
             return cellsToVisit.Count == 0;
 
             bool DoMove(Move move)
@@ -135,6 +132,7 @@
                 {
                     return false;
                 }
+
                 x += dx;
                 y += dy;
 
