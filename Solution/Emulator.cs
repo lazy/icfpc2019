@@ -38,6 +38,8 @@
         public static bool IsValidSolution(Map map, IReadOnlyList<Move> moves)
         {
             State? state = new State(map);
+            var movesCount = 0;
+
             foreach (var move in moves)
             {
                 state = state.Next(move);
@@ -45,6 +47,8 @@
                 {
                     return false;
                 }
+
+                ++movesCount;
             }
 
             return state.WrappedCellsCount == map.CellsToVisit.Count();

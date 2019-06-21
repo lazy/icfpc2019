@@ -1,6 +1,8 @@
 ﻿namespace Icfpc2019.Solution
 {
     using System;
+    using System.Diagnostics;
+    using System.Linq;
     using System.Runtime.CompilerServices;
 
     // Key doesn't really matter
@@ -88,6 +90,8 @@
             this.teleportsCount = teleportsCount;
             this.remainingSpeedBoostedMoves = remainingSpeedBoostedMoves;
             this.remainingDrillMoves = remainingDrillMoves;
+
+            Debug.Assert(this.wrappedCellsCount == this.wrappedCells.Enumerate().Count(), "Counts do not match!");
         }
 
         public int WrappedCellsCount => this.wrappedCellsCount;
@@ -104,7 +108,7 @@
 
                     if (newState?.remainingSpeedBoostedMoves >= 0)
                     {
-                        newState = this.DoMove(move, timeCost: 0) ?? newState;
+                        newState = newState.DoMove(move, timeCost: 0) ?? newState;
                     }
 
                     return newState;
@@ -161,7 +165,7 @@
 
                 // TODO: check visibility
                 var manipCoord = (x + dx, y + dy);
-                if (!wrappedCells.TryFind(manipCoord, out var val))
+                if (map.IsFree(x + dx, y + dy) && !wrappedCells.TryFind(manipCoord, out var _))
                 {
                     wrappedCells = wrappedCells.AddOrUpdate(manipCoord, true);
                     ++wrappedCellsCount;
@@ -233,26 +237,26 @@
             switch (this.map[newX, newY])
             {
                 case Map.Cell.Empty:
-                    return this.With(x: newX, y: newY);
+                    return this.With(x: newX, y: newY, timeCost: timeCost);
                 case Map.Cell.Obstacle:
                     return this.remainingDrillMoves <= 0
                         ? throw new InvalidOperationException()
-                        : this.With(x: newX, y: newY, drilledCells: this.drilledCells.AddOrUpdate((newX, newY), true));
+                        : this.With(x: newX, y: newY, drilledCells: this.drilledCells.AddOrUpdate((newX, newY), true), timeCost: timeCost);
                 case Map.Cell.FastWheels:
                     var fwCnt = CountBooster(this.fastWheelsCount);
-                    return this.With(pickedUpBoosterCoords: fwCnt.PickedUp, fastWheelsCount: fwCnt.Counter);
+                    return this.With(x: newX, y: newY, pickedUpBoosterCoords: fwCnt.PickedUp, fastWheelsCount: fwCnt.Counter, timeCost: timeCost);
                 case Map.Cell.Drill:
                     var drillCnt = CountBooster(this.drillsCount);
-                    return this.With(pickedUpBoosterCoords: drillCnt.PickedUp, drillsCount: drillCnt.Counter);
+                    return this.With(x: newX, y: newY, pickedUpBoosterCoords: drillCnt.PickedUp, drillsCount: drillCnt.Counter, timeCost: timeCost);
                 case Map.Cell.ManipulatorExtension:
                     var manipCnt = CountBooster(this.manipulatorExtensionCount);
-                    return this.With(pickedUpBoosterCoords: manipCnt.PickedUp, manipulatorExtensionCount: manipCnt.Counter);
+                    return this.With(x: newX, y: newY, pickedUpBoosterCoords: manipCnt.PickedUp, manipulatorExtensionCount: manipCnt.Counter, timeCost: timeCost);
                 case Map.Cell.MysteriousPoint:
                     var mystCnt = CountBooster(this.mysteriousPointsCount);
-                    return this.With(pickedUpBoosterCoords: mystCnt.PickedUp, mysteriousPointsCount: mystCnt.Counter);
+                    return this.With(x: newX, y: newY, pickedUpBoosterCoords: mystCnt.PickedUp, mysteriousPointsCount: mystCnt.Counter, timeCost: timeCost);
                 case Map.Cell.Teleport:
                     var teleCnt = CountBooster(this.teleportsCount);
-                    return this.With(pickedUpBoosterCoords: teleCnt.PickedUp, teleportsCount: teleCnt.Counter);
+                    return this.With(x: newX, y: newY, pickedUpBoosterCoords: teleCnt.PickedUp, teleportsCount: teleCnt.Counter, timeCost: timeCost);
                 case Map.Cell.Edge:
                 default:
                     throw new InvalidOperationException($"Unexpected cell: {this.map[newX, newY]}");
