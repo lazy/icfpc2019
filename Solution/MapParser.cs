@@ -34,7 +34,7 @@ namespace Icfpc2019.Solution
 
         private static void ParseBoosters(string description, Map.Cell[,] cells)
         {
-            foreach (var booster in description.Split(';'))
+            foreach (var booster in description.Split(';', StringSplitOptions.RemoveEmptyEntries))
             {
                 var boosterPos = ParsePoint(booster.Substring(1));
                 cells[boosterPos.X, boosterPos.Y] = booster[0] switch
@@ -50,7 +50,7 @@ namespace Icfpc2019.Solution
 
         private static List<Point> ParseContours(string description, AllPoints allPoints, bool inside)
         {
-            var contours = description.Split(';');
+            var contours = description.Split(';', StringSplitOptions.RemoveEmptyEntries);
             var pointsByContour = contours.Select(x => x.Split("),").Select(ParsePoint).ToArray()).ToArray();
             var directions = new[]
             {
@@ -111,8 +111,8 @@ namespace Icfpc2019.Solution
             var tokens = description.Trim('(', ')').Split(',');
             return new Point
             {
-                X = int.Parse(tokens[0]),
-                Y = int.Parse(tokens[1]),
+                X = int.Parse(tokens[0]) + 1,
+                Y = int.Parse(tokens[1]) + 1,
             };
         }
 

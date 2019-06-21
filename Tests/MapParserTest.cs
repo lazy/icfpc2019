@@ -1,11 +1,23 @@
 namespace Icfpc2019.Tests
 {
+    using System;
+    using System.IO;
+
     using Icfpc2019.Solution;
 
     using Xunit;
+    using Xunit.Abstractions;
 
     public class MapParserTests
     {
+        private readonly ITestOutputHelper testOutputHelper;
+
+        public MapParserTests(ITestOutputHelper testOutputHelper)
+        {
+            // Use testOutputHelper.WriteLine() instead of Console.WriteLine()
+            this.testOutputHelper = testOutputHelper;
+        }
+
         [Fact]
         public void TestParseExampleMap()
         {
@@ -13,17 +25,33 @@ namespace Icfpc2019.Tests
             var map = MapParser.Parse(ExampleMap);
 
             var expectedMap = @"
-xxxxxxxxxx.
-X.........x
-.....#....x
-..........x
-....##....x
-....##....x
-....##....x
-L...##....x
-FF..##....x
-BB........x
-v.........x
+.xxxxxxxxxx.
+xX.........x
+x.....#....x
+x..........x
+x....##....x
+x....##....x
+x....##....x
+xL...##....x
+xFF..##....x
+xBB........x
+xv.........x
+.xxxxxxxxxx.
+".Trim();
+            Assert.Equal(expectedMap.Replace("\r\n", "\n"), map.ToString());
+        }
+
+        [Fact]
+        public void TestMap001()
+        {
+            var mapContent = File.ReadAllText(@"..\..\..\..\Data\maps\prob-001.desc");
+            var map = MapParser.Parse(mapContent);
+            var expectedMap = @"
+.xxxxxx...
+x......xx.
+x........x
+xv.....xx.
+.xxxxxx...
 ".Trim();
             Assert.Equal(expectedMap.Replace("\r\n", "\n"), map.ToString());
         }
