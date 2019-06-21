@@ -6,6 +6,15 @@
 
     public class Emulator
     {
+        public static bool IsValidSolution(Map map, IReadOnlyList<Move> moves)
+        {
+            foreach (var move in moves)
+            {
+            }
+
+            return false;
+        }
+
         public static ExtendedSolution MakeExtendedSolution(Map map, IStrategy strategy) =>
             MakeExtendedSolution(map, strategy.Name, strategy.Solve(map));
 
@@ -32,15 +41,6 @@
                     gitCommitId: GitInfo.GitCommit,
                     moves: string.Empty);
             }
-        }
-
-        public static bool IsValidSolution(Map map, IReadOnlyList<Move> moves)
-        {
-            foreach (var move in moves)
-            {
-            }
-
-            return false;
         }
 
         private static class GitInfo

@@ -1,6 +1,5 @@
 namespace Icfpc2019.Tests
 {
-    using System;
     using System.IO;
 
     using Icfpc2019.Solution;
@@ -16,6 +15,30 @@ namespace Icfpc2019.Tests
         {
             // Use testOutputHelper.WriteLine() instead of Console.WriteLine()
             this.testOutputHelper = testOutputHelper;
+        }
+
+        [Fact]
+        public void ParsesAllRealMaps()
+        {
+            foreach (var mapFile in Directory.EnumerateFiles(@"..\..\..\..\Data\maps", "*.desc"))
+            {
+                MapParser.Parse(File.ReadAllText(mapFile));
+            }
+        }
+
+        [Fact]
+        public void TestMap001()
+        {
+            var mapContent = File.ReadAllText(@"..\..\..\..\Data\maps\prob-001.desc");
+            var map = MapParser.Parse(mapContent);
+            var expectedMap = @"
+.xxxxxx...
+x......xx.
+x........x
+xv.....xx.
+.xxxxxx...
+".Trim();
+            Assert.Equal(expectedMap.Replace("\r\n", "\n"), map.ToString());
         }
 
         [Fact]
@@ -39,30 +62,6 @@ xv.........x
 .xxxxxxxxxx.
 ".Trim();
             Assert.Equal(expectedMap.Replace("\r\n", "\n"), map.ToString());
-        }
-
-        [Fact]
-        public void TestMap001()
-        {
-            var mapContent = File.ReadAllText(@"..\..\..\..\Data\maps\prob-001.desc");
-            var map = MapParser.Parse(mapContent);
-            var expectedMap = @"
-.xxxxxx...
-x......xx.
-x........x
-xv.....xx.
-.xxxxxx...
-".Trim();
-            Assert.Equal(expectedMap.Replace("\r\n", "\n"), map.ToString());
-        }
-
-        [Fact]
-        public void ParsesAllRealMaps()
-        {
-            foreach (var mapFile in Directory.EnumerateFiles(@"..\..\..\..\Data\maps", "*.desc"))
-            {
-                MapParser.Parse(File.ReadAllText(mapFile));
-            }
         }
     }
 }

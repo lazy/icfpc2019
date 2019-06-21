@@ -76,6 +76,12 @@
             return new Map(startX, startY, cells);
         }
 
+        public bool IsFree(int x, int y)
+        {
+            var cell = this[x, y];
+            return cell != Cell.Edge && cell != Cell.Obstacle;
+        }
+
         public override string ToString()
         {
             var rows = new List<string>();

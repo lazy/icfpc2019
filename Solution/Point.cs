@@ -23,5 +23,7 @@ namespace Icfpc2019.Solution
                 return (this.X * 397) ^ this.Y;
             }
         }
+
+        public override string ToString() => string.Format("({0}, {1})", this.X, this.Y);
     }
 }
