@@ -27,8 +27,8 @@
             BoosterX,
         }
 
-        public int Width => this.cells.GetLength(0);
-        public int Height => this.cells.GetLength(1);
+        public int Width => this.cells.GetLength(1);
+        public int Height => this.cells.GetLength(0);
 
         public int StartX { get; }
 
@@ -39,7 +39,9 @@
         public static Map FromAscii(int startX, int startY, params string[] lines)
         {
             var cells = new Cell[lines.Length, lines[0].Length];
-            for (var i = 0; i < lines.Length; ++i)
+
+            // Turn map upside down so we can use convenient coords
+            for (var i = lines.Length - 1; i >= 0; --i)
             {
                 if (lines[i].Length != lines[0].Length)
                 {
