@@ -1,4 +1,4 @@
-namespace Tests
+namespace Icfpc2019.Tests
 {
     using Xunit;
 

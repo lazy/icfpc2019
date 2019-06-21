@@ -1,4 +1,4 @@
-﻿namespace Solution
+﻿namespace Icfpc2019.Solution
 {
     public struct Map
     {

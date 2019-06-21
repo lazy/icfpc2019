@@ -1,4 +1,4 @@
-﻿namespace Runner
+﻿namespace Icfpc2019.Runner
 {
     using System;
 

@@ -3,6 +3,8 @@
   <PropertyGroup>
     <OutputType>Exe</OutputType>
     <TargetFramework>netcoreapp3.0</TargetFramework>
+    <RootNamespace>Icfpc2019.Runner</RootNamespace>
+    <AssemblyName>Icfpc2019.Runner</AssemblyName>
   </PropertyGroup>
 
   <ItemGroup>

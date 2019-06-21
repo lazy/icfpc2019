@@ -2,7 +2,8 @@
 
   <PropertyGroup>
     <TargetFramework>netcoreapp3.0</TargetFramework>
-
+    <RootNamespace>Icfpc2019.Tests</RootNamespace>
+    <AssemblyName>Icfpc2019.Tests</AssemblyName>
     <IsPackable>false</IsPackable>
   </PropertyGroup>
 

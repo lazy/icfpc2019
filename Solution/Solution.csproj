@@ -2,6 +2,8 @@
 
   <PropertyGroup>
     <TargetFramework>netcoreapp3.0</TargetFramework>
+    <RootNamespace>Icfpc2019.Solution</RootNamespace>
+    <AssemblyName>Icfpc2019.Solution</AssemblyName>
   </PropertyGroup>
 
 </Project>

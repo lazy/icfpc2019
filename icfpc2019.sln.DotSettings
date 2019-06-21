@@ -695,6 +695,7 @@ namespace $NAMESPACE$&#xD;
   /// &lt;/summary&gt;&#xD;
   public interface $INTERFACE$ {$END$}&#xD;
 }</s:String>
+	<s:Boolean x:Key="/Default/UserDictionary/Words/=Icfpc/@EntryIndexedValue">True</s:Boolean>
 	
 	
 	
