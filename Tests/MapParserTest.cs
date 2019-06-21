@@ -32,11 +32,11 @@ namespace Icfpc2019.Tests
             var mapContent = File.ReadAllText(@"..\..\..\..\Data\maps\prob-001.desc");
             var map = MapParser.Parse(mapContent);
             var expectedMap = @"
-.xxxxxx...
-x......xx.
+xxxxxxxxxx
+x......xxx
 x........x
-xv.....xx.
-.xxxxxx...
+xv.....xxx
+xxxxxxxxxx
 ".Trim();
             Assert.Equal(expectedMap.Replace("\r\n", "\n"), map.ToString());
         }
@@ -48,7 +48,7 @@ xv.....xx.
             var map = MapParser.Parse(ExampleMap);
 
             var expectedMap = @"
-.xxxxxxxxxx.
+xxxxxxxxxxxx
 xX.........x
 x.....#....x
 x..........x
@@ -59,7 +59,7 @@ xL...##....x
 xFF..##....x
 xBB........x
 xv.........x
-.xxxxxxxxxx.
+xxxxxxxxxxxx
 ".Trim();
             Assert.Equal(expectedMap.Replace("\r\n", "\n"), map.ToString());
         }
