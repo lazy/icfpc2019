@@ -9,7 +9,7 @@
 
     public static class LookAheadFactory
     {
-        private static int[] forcedManipulatorExtensionsCount = { 0, 1, 2, 3, 4, 8, 1 };
+        private static int[] forcedManipulatorExtensionsCount = { 0, 1, 2, 3, 4, 8, 10000 };
         public static IEnumerable<IStrategy> MakeStrategies()
         {
             foreach (var recalcsTime in new[] { 1, 10 })
