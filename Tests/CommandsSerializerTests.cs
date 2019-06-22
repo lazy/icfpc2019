@@ -12,35 +12,49 @@
         public void AllMovesWorkExceptUseBoosterB() =>
             TestSerialization(
                 "WSADQEFL",
-                Move.Up,
-                Move.Down,
-                Move.Left,
-                Move.Right,
-                Turn.Left,
-                Turn.Right,
-                UseFastWheels.Instance,
-                UseDrill.Instance);
+                new Command[]
+                {
+                    Move.Up,
+                    Move.Down,
+                    Move.Left,
+                    Move.Right,
+                    Turn.Left,
+                    Turn.Right,
+                    UseFastWheels.Instance,
+                    UseDrill.Instance
+                });
 
         [Fact]
         public void UseBoostBWorks() =>
             TestSerialization(
                 "B(-1,15)B(1,1)",
-                new UseManipulatorExtension(-1, 15),
-                new UseManipulatorExtension(1, 1));
+                new Command[]
+                {
+                    new UseManipulatorExtension(-1, 15),
+                    new UseManipulatorExtension(1, 1)
+                });
 
         [Fact]
         public void ClonningParses() =>
             TestSerialization(
-                "WWCA#F",
-                Move.Up,
-                Move.Up,
-                Clone.Instance,
-                Move.Left,
-                Move.Right);
+                "WWCA#D",
+                new Command[]
+                {
+                    Move.Up,
+                    Move.Up,
+                    Clone.Instance,
+                    Move.Left,
+                },
+                new Command[]
+                {
+                    Move.Right
+                });
 
-        private static void TestSerialization(string serializedMoves, params Command[] commands)
+        private static void TestSerialization(string serializedMoves, params Command[][] commands)
         {
-            var parsedMoves = CommandsSerializer.Parse(serializedMoves).ToArray();
+            var parsedMoves = CommandsSerializer.Parse(serializedMoves)
+                .Select(botCommands => botCommands.ToArray())
+                .ToArray();
             var serializedBackMoves = CommandsSerializer.Serialize(commands);
 
             Assert.Equal(commands, parsedMoves);

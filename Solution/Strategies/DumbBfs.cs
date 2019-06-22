@@ -23,7 +23,10 @@
             Move.Down,
         };
 
-        public IEnumerable<Command> Solve(Map map)
+        public IEnumerable<Command>[] Solve(Map map) =>
+            new[] { this.Solve1(map) };
+
+        public IEnumerable<Command> Solve1(Map map)
         {
             int negativeExtension = 1;
             int positiveExtension = 1;

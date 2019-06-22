@@ -10,11 +10,16 @@
         public static ExtendedSolution MakeExtendedSolution(Map map, IStrategy strategy) =>
             MakeExtendedSolution(map, strategy.Name, strategy.Solve(map));
 
-        public static ExtendedSolution MakeExtendedSolution(Map map, string strategyName, IEnumerable<Command> movesEnumerable)
+        public static ExtendedSolution MakeExtendedSolution(Map map, string strategyName, IEnumerable<Command>[] movesEnumerable)
         {
             try
             {
-                var moves = movesEnumerable.ToArray();
+                if (movesEnumerable.Length != 1)
+                {
+                    throw new NotImplementedException();
+                }
+
+                var moves = movesEnumerable.Single().ToArray();
                 var isValid = IsValidSolution(map, moves);
                 return new ExtendedSolution(
                     isSuccessful: isValid,

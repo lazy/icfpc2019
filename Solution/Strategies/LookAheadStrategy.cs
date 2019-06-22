@@ -120,7 +120,10 @@
             this.removeTurns ? "RT" : "KT",
             this.numVisCoeff);
 
-        public IEnumerable<Command> Solve(Map map)
+        public IEnumerable<Command>[] Solve(Map map) =>
+            new[] { this.Solve1(map) };
+
+        public IEnumerable<Command> Solve1(Map map)
         {
             // No point in running if there's another strategy that will collect everything
             if (LookAheadFactory.PrevSize(this.forcedManipulatorExtensionsCount) >= map.NumManipulatorExtensions)
