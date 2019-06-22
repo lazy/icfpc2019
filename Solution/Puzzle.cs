@@ -9,8 +9,8 @@ namespace Icfpc2019.Solution
     {
         private const int RectDim = 5;
         private readonly AllPoints allPoints = new AllPoints();
-        private readonly List<Point> insidePoints = new List<Point>();
-        private readonly List<Point> outsidePoints = new List<Point>();
+        private readonly HashSet<Point> insidePoints = new HashSet<Point>();
+        private readonly HashSet<Point> outsidePoints = new HashSet<Point>();
         private int bNum;
         private int eNum;
         private int tSize;
@@ -41,8 +41,8 @@ namespace Icfpc2019.Solution
             this.cNum = int.Parse(hyperParams[9]);
             this.xNum = int.Parse(hyperParams[10]);
 
-            this.insidePoints.AddRange(tokens[1].Split("),").Select(Point.Parse));
-            this.outsidePoints.AddRange(tokens[2].Split("),").Select(Point.Parse));
+            this.insidePoints.UnionWith(tokens[1].Split("),").Select(Point.Parse));
+            this.outsidePoints.UnionWith(tokens[2].Split("),").Select(Point.Parse));
 
             foreach (var pts in new[] { this.insidePoints, this.outsidePoints })
             {
@@ -51,12 +51,67 @@ namespace Icfpc2019.Solution
                     this.allPoints.Update(p);
                 }
             }
+
+            var rng = new Random(31337);
+            var outPts = new List<Point>(this.outsidePoints.OrderBy(x => rng.Next()));
+
+            foreach (var currentPoint in outPts)
+            {
+                var toLeft = currentPoint.X;
+                var toRight = this.tSize - 1 - currentPoint.X;
+                var toDown = currentPoint.Y;
+                var toUp = this.tSize - 1 - currentPoint.Y;
+
+                var tracePoint = currentPoint;
+                if (Math.Min(toLeft, toRight) < Math.Min(toDown, toUp))
+                {
+                    if (toLeft < toRight)
+                    {
+                        while (tracePoint.X > 0)
+                        {
+                            --tracePoint.X;
+                            this.outsidePoints.Add(tracePoint);
+                        }
+                    }
+                    else
+                    {
+                        while (tracePoint.X < this.tSize)
+                        {
+                            ++tracePoint.X;
+                            this.outsidePoints.Add(tracePoint);
+                        }
+                    }
+                }
+                else
+                {
+                    if (toDown < toUp)
+                    {
+                        while (tracePoint.Y > 0)
+                        {
+                            --tracePoint.Y;
+                            this.outsidePoints.Add(tracePoint);
+                        }
+                    }
+                    else
+                    {
+                        while (tracePoint.Y < this.tSize)
+                        {
+                            ++tracePoint.Y;
+                            this.outsidePoints.Add(tracePoint);
+                        }
+                    }
+                }
+            }
+
+            var vCount = (this.tSize * this.tSize) - this.outsidePoints.Count;
+
+            Console.WriteLine($"vCount = {vCount}, vMax = {this.vMax}, vMin = {this.vMin}");
         }
 
         public Bitmap SaveToBitmap()
         {
-            var totalWidth = Math.Max(this.allPoints.MaxX, this.tSize) + 2;
-            var totalHeight = Math.Max(this.allPoints.MaxY, this.tSize) + 2;
+            var totalWidth = Math.Max(this.allPoints.MaxX, this.tSize) + 1;
+            var totalHeight = Math.Max(this.allPoints.MaxY, this.tSize) + 1;
             var bmp = new Bitmap(RectDim * totalWidth, RectDim * totalHeight);
             using (var g = Graphics.FromImage(bmp))
             {
@@ -72,7 +127,7 @@ namespace Icfpc2019.Solution
                 {
                     for (var y = 0; y < totalHeight; ++y)
                     {
-                        DrawRect(Brushes.Bisque, x, y);
+                        DrawRect(Brushes.White, x, y);
                     }
                 }
 

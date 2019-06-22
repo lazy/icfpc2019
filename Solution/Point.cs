@@ -35,5 +35,7 @@ namespace Icfpc2019.Solution
         }
 
         public override string ToString() => string.Format("({0}, {1})", this.X, this.Y);
+
+        public int ManhattanDist(Point other) => Math.Abs(this.X - other.X) + Math.Abs(this.Y - other.Y);
     }
 }
