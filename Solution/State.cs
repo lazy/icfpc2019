@@ -115,11 +115,11 @@
         public bool IsWrapped(int x, int y) => this.wrappedCells.TryFind((x, y), out var _);
 
         public bool UnwrappedVisible(int x, int y, int dir) =>
-            this.MaxUnwrappedVisibleDistFromCenter(x, y, dir) != int.MinValue;
+            this.MaxUnwrappedVisibleDistFromCenter(x, y, dir) != 0;
 
         public int MaxUnwrappedVisibleDistFromCenter(int x, int y, int dir)
         {
-            var max = int.MinValue;
+            var max = 0;
             foreach (var delta in this.manipConfig)
             {
                 var (dx, dy) = TurnManip(dir, delta);

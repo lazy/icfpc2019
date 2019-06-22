@@ -9,7 +9,7 @@
 
     public class LookAheadStrategy : IStrategy
     {
-        private const int BeamSize = 64;
+        private const int BeamSize = 10;
         private const int BeamSearchDepth = 10;
 
         private static readonly Command[] BeamSearchCommands =
@@ -86,7 +86,8 @@
                 var beam = new FastPriorityQueue<WeightedState>(BeamSize + 1);
                 var seenStates = new HashSet<int>();
 
-                beam.Enqueue(new WeightedState(state, null), CalcPriority(state));
+                var startState = new WeightedState(state, null);
+                beam.Enqueue(startState, startState.CalcPriority(state.X, state.Y));
 
                 var bestState = (WeightedState?)null;
 
@@ -104,18 +105,20 @@
 
                             if (nextState != null)
                             {
+                                /*
                                 if (seenStates.Contains(nextState.Hash))
                                 {
                                     // ++numCollisions;
                                     continue;
                                 }
+                                */
 
                                 seenStates.Add(nextState.Hash);
                                 if (beam.Count < BeamSize ||
                                     nextState.WrappedCellsCount > beam.First.State.WrappedCellsCount)
                                 {
                                     var nextWeightedState = new WeightedState(nextState, (prevState, command));
-                                    beam.Enqueue(nextWeightedState, CalcPriority(nextState));
+                                    beam.Enqueue(nextWeightedState, nextWeightedState.CalcPriority(state.X, state.Y));
 
                                     // remove worst states
                                     if (beam.Count > BeamSize)
@@ -152,12 +155,7 @@
                 }
 
                 return firstCommand;
-
-                float CalcPriority(State newState) =>
-                    map.GetDistFromCenter(newState.X, newState.Y) +
-                    newState.WrappedCellsCount +
-                    (0.01f * (Math.Abs(newState.X - state.X) + Math.Abs(newState.Y - state.Y)));
-                }
+            }
 
             void Bfs()
             {
@@ -300,10 +298,20 @@
             {
                 this.State = state;
                 this.Prev = prev;
+                this.BestVisibleCount = Math.Max(
+                    this.State.MaxUnwrappedVisibleDistFromCenter(this.State.X, this.State.Y, this.State.Dir),
+                    this.Prev?.state?.BestVisibleCount ?? 0);
             }
 
             public State State { get; }
             public (WeightedState state, Command command)? Prev { get; }
+            public int BestVisibleCount { get; }
+
+            public float CalcPriority(int startX, int startY) =>
+                    (128 * this.BestVisibleCount) +
+                    (8 * this.State.WrappedCellsCount) +
+                    Math.Abs(this.State.X - startX) +
+                    Math.Abs(this.State.Y - startY);
         }
     }
 }
