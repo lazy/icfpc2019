@@ -5,6 +5,7 @@ namespace Icfpc2019.Solution
     using System.Diagnostics;
     using System.Drawing;
     using System.Linq;
+    using System.Text;
 
     public class Puzzle
     {
@@ -16,6 +17,7 @@ namespace Icfpc2019.Solution
         private readonly HashSet<Point> contourPoints = new HashSet<Point>();
         private readonly HashSet<Point> insidePoints = new HashSet<Point>();
         private readonly HashSet<Point> outsidePoints = new HashSet<Point>();
+        private readonly Random rng = new Random(31337);
         private int cNum;
         private int dNum;
         private int fNum;
@@ -64,22 +66,9 @@ namespace Icfpc2019.Solution
 
             if (this.contourPoints.Count <= this.vMin)
             {
-                var rng = new Random();
                 for (var iter = 0; iter < this.vMin - this.contourPoints.Count; ++iter)
                 {
-                    while (true)
-                    {
-                        var rndPoint = new Point
-                        {
-                            X = rng.Next(this.tSize),
-                            Y = rng.Next(this.tSize),
-                        };
-                        if (!this.outsidePoints.Contains(rndPoint) && !this.insidePoints.Contains(rndPoint))
-                        {
-                            this.ConnectPointWithBoundary(rndPoint);
-                            break;
-                        }
-                    }
+                    this.ConnectPointWithBoundary(this.SelectRandomPoint(null));
                 }
             }
 
@@ -131,13 +120,65 @@ namespace Icfpc2019.Solution
 
         public string SaveToMap()
         {
-            var contourPointsStr = string.Join(',', this.contourPoints.Select(x => $"({x.X},{x.Y})"));
-            return $"{contourPointsStr}#(10,10)##";
+            string FmtPoint(Point p) => $"({p.X},{p.Y})";
+            var contourPointsStr = string.Join(',', this.contourPoints.Select(FmtPoint));
+
+            var selectedPoints = new HashSet<Point>();
+            var startPos = this.SelectRandomPoint(selectedPoints);
+
+            var boosters = new StringBuilder();
+
+            void SelectBoosters(char sym, int count)
+            {
+                for (var i = 0; i < count; ++i)
+                {
+                    if (boosters.Length > 0)
+                    {
+                        boosters.Append(';');
+                    }
+
+                    var boosterPoint = this.SelectRandomPoint(selectedPoints);
+                    boosters.Append($"{sym}{FmtPoint(boosterPoint)}");
+                }
+            }
+
+            SelectBoosters('B', this.mNum);
+            SelectBoosters('F', this.fNum);
+            SelectBoosters('L', this.dNum);
+            SelectBoosters('R', this.rNum);
+            SelectBoosters('C', this.cNum);
+            SelectBoosters('X', this.xNum);
+
+            return $"{contourPointsStr}#{FmtPoint(startPos)}##{boosters}";
         }
 
         private static Point CorrectPoint(Point p)
         {
             return new Point { X = p.X - 1, Y = p.Y - 1 };
+        }
+
+        private Point SelectRandomPoint(HashSet<Point>? alreadySelected)
+        {
+            while (true)
+            {
+                var rndPoint = new Point
+                {
+                    X = this.rng.Next(this.tSize),
+                    Y = this.rng.Next(this.tSize),
+                };
+                if (!this.outsidePoints.Contains(rndPoint) && !this.insidePoints.Contains(rndPoint))
+                {
+                    if (alreadySelected != null)
+                    {
+                        if (!alreadySelected.Contains(rndPoint))
+                        {
+                            alreadySelected.Add(rndPoint);
+                        }
+                    }
+
+                    return rndPoint;
+                }
+            }
         }
 
         private void CollectContourPoints()
