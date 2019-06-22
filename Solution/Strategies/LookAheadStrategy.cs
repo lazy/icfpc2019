@@ -9,7 +9,7 @@
 
     public class LookAheadStrategy : IStrategy
     {
-        private const int BeamSize = 10;
+        private const int BeamSize = 64;
         private const int BeamSearchDepth = 10;
 
         private static readonly Command[] BeamSearchCommands =
@@ -78,12 +78,12 @@
 
             yield break;
 
-            Command? TryBeamSearch() => null;
+            Command? TryBeamSearch() => null; // TryBeamSearchImpl();
 
             Command? TryBeamSearchImpl()
             {
                 var curWrappedCount = state.WrappedCellsCount;
-                var beam = new FastPriorityQueue<WeightedState>(BeamSize + 1);
+                var beam = new StablePriorityQueue<WeightedState>(BeamSize + 1);
                 var seenStates = new HashSet<int>();
 
                 var startState = new WeightedState(state, null);
@@ -105,13 +105,11 @@
 
                             if (nextState != null)
                             {
-                                /*
                                 if (seenStates.Contains(nextState.Hash))
                                 {
                                     // ++numCollisions;
                                     continue;
                                 }
-                                */
 
                                 seenStates.Add(nextState.Hash);
                                 if (beam.Count < BeamSize ||
@@ -292,7 +290,7 @@
             public int Depth { get; }
         }
 
-        private class WeightedState : FastPriorityQueueNode
+        private class WeightedState : StablePriorityQueueNode
         {
             public WeightedState(State state, (WeightedState, Command)? prev)
             {
@@ -308,10 +306,10 @@
             public int BestVisibleCount { get; }
 
             public float CalcPriority(int startX, int startY) =>
-                    (128 * this.BestVisibleCount) +
-                    (8 * this.State.WrappedCellsCount) +
-                    Math.Abs(this.State.X - startX) +
-                    Math.Abs(this.State.Y - startY);
+                (128 * this.BestVisibleCount) +
+                (8 * this.State.WrappedCellsCount) +
+                (0 * Math.Abs(this.State.X - startX)) +
+                (0 * Math.Abs(this.State.Y - startY));
         }
     }
 }
