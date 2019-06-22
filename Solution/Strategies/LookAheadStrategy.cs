@@ -77,8 +77,6 @@
 
             Command? TryBeamSearch()
             {
-                return null;
-                /*
                 var curWrappedCount = state.WrappedCellsCount;
                 var beam = new FastPriorityQueue<WeightedState>(BeamSize + 1);
 
@@ -138,7 +136,6 @@
                 }
 
                 return firstCommand;
-                */
             }
 
             void Bfs()
