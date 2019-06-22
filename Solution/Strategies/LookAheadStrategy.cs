@@ -118,7 +118,7 @@
             this.forcedManipulatorExtensionsCount,
             this.bfsExtraDepth,
             this.removeTurns ? "RT" : "KT",
-            $"s{this.numVisCoeff}");
+            this.numVisCoeff);
 
         public IEnumerable<Command> Solve(Map map)
         {
