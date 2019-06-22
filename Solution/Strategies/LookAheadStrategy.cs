@@ -9,6 +9,7 @@
 
     public static class LookAheadFactory
     {
+        private static int[] forcedManipulatorExtensionsCount = { 0, 1, 2, 3, 4, 8, 1 };
         public static IEnumerable<IStrategy> MakeStrategies()
         {
             foreach (var recalcsTime in new[] { 1, 10 })
@@ -22,13 +23,33 @@
                             continue;
                         }
 
-                        foreach (var forcedManipulatorExtensionsCount in new[] { 0, 1, 2, 3, 4, 8 })
+                        foreach (var forcedManipulatorExtensionsCount in forcedManipulatorExtensionsCount)
                         {
-                            yield return new LookAheadStrategy(sym, growthSign, recalcsTime, forcedManipulatorExtensionsCount);
+                            foreach (var extraDepth in new[] { 5, 10 })
+                            {
+                                yield return new LookAheadStrategy(
+                                    sym, growthSign, recalcsTime, forcedManipulatorExtensionsCount, extraDepth);
+                            }
                         }
                     }
                 }
             }
+        }
+
+        public static int PrevSize(int sz)
+        {
+            var prev = -1;
+            foreach (var s in forcedManipulatorExtensionsCount)
+            {
+                if (s >= sz)
+                {
+                    return prev;
+                }
+
+                prev = s;
+            }
+
+            throw new InvalidOperationException();
         }
     }
 
@@ -54,19 +75,32 @@
         private readonly int initSignGrowth;
         private readonly int recalcDistsFromCenterCount;
         private readonly int forcedManipulatorExtensionsCount;
+        private readonly int bfsExtraDepth;
 
-        public LookAheadStrategy(bool symmetricGrowth, int initSignGrowth, int recalcDistsFromCenterCount, int forcedManipulatorExtensionsCount)
+        public LookAheadStrategy(
+            bool symmetricGrowth,
+            int initSignGrowth,
+            int recalcDistsFromCenterCount,
+            int forcedManipulatorExtensionsCount,
+            int bfsExtraDepth)
         {
             this.symmetricGrowth = symmetricGrowth;
             this.initSignGrowth = initSignGrowth;
             this.recalcDistsFromCenterCount = recalcDistsFromCenterCount;
             this.forcedManipulatorExtensionsCount = forcedManipulatorExtensionsCount;
+            this.bfsExtraDepth = bfsExtraDepth;
         }
 
-        public string Name => $"{nameof(LookAheadStrategy)}_{(this.symmetricGrowth ? "Sym" : "Assym")}_{(this.initSignGrowth > 0 ? "L" : "R")}_{this.recalcDistsFromCenterCount}_{this.forcedManipulatorExtensionsCount}";
+        public string Name => $"{nameof(LookAheadStrategy)}_{(this.symmetricGrowth ? "Sym" : "Assym")}_{(this.initSignGrowth > 0 ? "L" : "R")}_{this.recalcDistsFromCenterCount}_{this.forcedManipulatorExtensionsCount}_{this.bfsExtraDepth}";
 
         public IEnumerable<Command> Solve(Map map)
         {
+            // No point in running if there's another strategy that will collect everything
+            if (LookAheadFactory.PrevSize(this.forcedManipulatorExtensionsCount) >= map.NumManipulatorExtensions)
+            {
+                yield break;
+            }
+
             var forcedExtensionsLeft = Math.Min(map.NumManipulatorExtensions, this.forcedManipulatorExtensionsCount);
 
             var state = new State(map);
@@ -299,7 +333,7 @@
                 bfsNodes[state.X, state.Y, state.Dir] = new BfsNode(generation, -1, 0);
 
                 int? maxDepth = null;
-                (int, int, int, int distFromCenter)? bestDest = null;
+                (int, int, int, bool isExtensionBooster, int distFromCenter)? bestDest = null;
 
                 while (bfsQueue.Count > 0)
                 {
@@ -315,23 +349,24 @@
                             throw new InvalidOperationException();
                         }
 
-                        var (destX, destY, destDir, distFromCenter) = bestDest.Value;
+                        var (destX, destY, destDir, destIsExtensionBooster, distFromCenter) = bestDest.Value;
                         FindBackwardPath(destX, destY, destDir);
                         return;
                     }
 
-                    // path found
-                    if (state.UnwrappedVisible(x, y, dir, distsFromCenter))
+                    // path found, but search a bit more for deeper fruits
+                    var isExtensionBooster = map[x, y] == Map.Cell.ManipulatorExtension && !state.IsPickedUp(x, y);
+                    if (state.UnwrappedVisible(x, y, dir, distsFromCenter) || isExtensionBooster)
                     {
                         if (maxDepth == null)
                         {
-                            maxDepth = depth + 5;
+                            maxDepth = depth + this.bfsExtraDepth;
                         }
 
                         var distFromCenter = state.MaxUnwrappedVisibleDistFromCenter(x, y, dir, distsFromCenter);
-                        if (bestDest == null || distFromCenter > bestDest.Value.distFromCenter)
+                        if (bestDest == null || Quality(isExtensionBooster, distFromCenter) > Quality(bestDest.Value.isExtensionBooster, bestDest.Value.distFromCenter))
                         {
-                            bestDest = (x, y, dir, distFromCenter);
+                            bestDest = (x, y, dir, isExtensionBooster, distFromCenter);
                         }
                     }
 
@@ -359,9 +394,12 @@
                     }
                 }
 
-                var (finalX, finalY, finalDir, _) =
+                var (finalX, finalY, finalDir, _1, _2) =
                     bestDest ?? throw new InvalidOperationException("Couldn't find any path with BFS!");
                 FindBackwardPath(finalX, finalY, finalDir);
+
+                int Quality(bool isBooster, int distFromCenter) =>
+                    (isBooster ? 1000 : 0) + distFromCenter;
             }
 
             void FindBackwardPath(int x, int y, int dir)

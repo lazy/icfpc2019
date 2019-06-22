@@ -30,6 +30,8 @@
             var totalTimeUnits = 0;
             var haveFailures = false;
 
+            var outputLock = new object();
+
             Parallel.ForEach(
                 Directory.EnumerateFiles("Data/maps", "*.desc").Reverse(),
                 new ParallelOptions { MaxDegreeOfParallelism = -1 },
@@ -71,7 +73,7 @@
                     File.WriteAllText($"Data/solutions/{mapName}.sol", best.Commands);
                     log.Add($"  BEST ({best.StrategyName}): {best.IsSuccessful}/{best.TimeUnits}");
 
-                    lock (strategies)
+                    lock (outputLock)
                     {
                         if (best.TimeUnits.HasValue)
                         {
