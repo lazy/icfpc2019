@@ -11,6 +11,7 @@ namespace Icfpc2019.Solution
         private readonly AllPoints allPoints = new AllPoints();
         private readonly HashSet<Point> insidePoints = new HashSet<Point>();
         private readonly HashSet<Point> outsidePoints = new HashSet<Point>();
+        private readonly HashSet<Point> contourPoints = new HashSet<Point>();
         private int bNum;
         private int eNum;
         private int tSize;
@@ -41,8 +42,8 @@ namespace Icfpc2019.Solution
             this.cNum = int.Parse(hyperParams[9]);
             this.xNum = int.Parse(hyperParams[10]);
 
-            this.insidePoints.UnionWith(tokens[1].Split("),").Select(Point.Parse));
-            this.outsidePoints.UnionWith(tokens[2].Split("),").Select(Point.Parse));
+            this.insidePoints.UnionWith(tokens[1].Split("),").Select(Point.Parse).Select(CorrectPoint));
+            this.outsidePoints.UnionWith(tokens[2].Split("),").Select(Point.Parse).Select(CorrectPoint));
 
             foreach (var pts in new[] { this.insidePoints, this.outsidePoints })
             {
@@ -53,8 +54,10 @@ namespace Icfpc2019.Solution
             }
 
             var outPts = new List<Point>(this.outsidePoints);
-            var dx = new[] { 1, 0, -1, 0 };
-            var dy = new[] { 0, -1, 0, 1 };
+            var dx = new[] { 0, 1, 0, -1 };
+            var dy = new[] { 1, 0, -1, 0 };
+
+            bool GoodXy(int x, int y) => x >= 0 && x <= this.tSize && y >= 0 && y <= this.tSize;
 
             foreach (var currentPoint in outPts)
             {
@@ -68,7 +71,7 @@ namespace Icfpc2019.Solution
                 while (queue.Count > 0)
                 {
                     var cur = queue.Dequeue();
-                    if (cur.X <= 0 || cur.X >= this.tSize || cur.Y <= 0 || cur.Y >= this.tSize)
+                    if (!GoodXy(cur.X, cur.Y))
                     {
                         while (prev.ContainsKey(cur))
                         {
@@ -89,6 +92,35 @@ namespace Icfpc2019.Solution
                             visited.Add(nextPoint);
                         }
                     }
+                }
+            }
+
+            var startPoint = new Point { X = 0, Y = 0 };
+            var curContour = startPoint;
+            var dir = 1;
+            while (true)
+            {
+                this.contourPoints.Add(curContour);
+                var chosenDir = (dir + 1) % 4;
+
+                for (var inc = 0; inc < 4; ++inc)
+                {
+                    var nextX = curContour.X + dx[chosenDir];
+                    var nextY = curContour.Y + dy[chosenDir];
+                    var nextContour = new Point { X = nextX, Y = nextY };
+                    if (GoodXy(nextX, nextY) && !this.outsidePoints.Contains(nextContour))
+                    {
+                        curContour = nextContour;
+                        dir = chosenDir;
+                        break;
+                    }
+
+                    chosenDir = (chosenDir + 3) % 4;
+                }
+
+                if (curContour == startPoint)
+                {
+                    break;
                 }
             }
 
@@ -129,9 +161,19 @@ namespace Icfpc2019.Solution
                 {
                     DrawRect(Brushes.Black, p.X, p.Y);
                 }
+
+                foreach (var p in this.contourPoints)
+                {
+                    DrawRect(Brushes.Red, p.X, p.Y);
+                }
             }
 
             return bmp;
+        }
+
+        private static Point CorrectPoint(Point p)
+        {
+            return new Point { X = p.X - 1, Y = p.Y - 1 };
         }
     }
 }
