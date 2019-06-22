@@ -12,6 +12,16 @@ namespace Icfpc2019.Solution
 
         public static bool operator ==(Point left, Point right) => left.Equals(right);
 
+        public static Point Parse(string description)
+        {
+            var tokens = description.Trim('(', ')').Split(',');
+            return new Point
+            {
+                X = int.Parse(tokens[0]) + 1,
+                Y = int.Parse(tokens[1]) + 1,
+            };
+        }
+
         public bool Equals(Point other) => this.X == other.X && this.Y == other.Y;
 
         public override bool Equals(object obj) => obj is Point other && this.Equals(other);

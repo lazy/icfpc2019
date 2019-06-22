@@ -12,7 +12,7 @@ namespace Icfpc2019.Solution
             var tokens = description.Split("#");
             var allPoints = new AllPoints();
             var edges = ParseContours(tokens[0], allPoints, false);
-            var startPoint = ParsePoint(tokens[1]);
+            var startPoint = Point.Parse(tokens[1]);
             var obstacles = ParseContours(tokens[2], allPoints, true);
 
             var cells = new Map.Cell[allPoints.MaxX + 1, allPoints.MaxY + 1];
@@ -36,7 +36,7 @@ namespace Icfpc2019.Solution
         {
             foreach (var booster in description.Split(';', StringSplitOptions.RemoveEmptyEntries))
             {
-                var boosterPos = ParsePoint(booster.Substring(1));
+                var boosterPos = Point.Parse(booster.Substring(1));
                 cells[boosterPos.X, boosterPos.Y] = booster[0] switch
                     {
                     'B' => Map.Cell.ManipulatorExtension,
@@ -53,7 +53,7 @@ namespace Icfpc2019.Solution
         private static List<Point> ParseContours(string description, AllPoints allPoints, bool inside)
         {
             var contours = description.Split(';', StringSplitOptions.RemoveEmptyEntries);
-            var pointsByContour = contours.Select(x => x.Split("),").Select(ParsePoint).ToArray()).ToArray();
+            var pointsByContour = contours.Select(x => x.Split("),").Select(Point.Parse).ToArray()).ToArray();
             var directions = new[]
             {
                 new Point { X = 1, Y = 0 },
@@ -106,45 +106,6 @@ namespace Icfpc2019.Solution
             }
 
             return result;
-        }
-
-        private static Point ParsePoint(string description)
-        {
-            var tokens = description.Trim('(', ')').Split(',');
-            return new Point
-            {
-                X = int.Parse(tokens[0]) + 1,
-                Y = int.Parse(tokens[1]) + 1,
-            };
-        }
-
-        private class AllPoints
-        {
-            public AllPoints()
-            {
-                this.Points = new HashSet<Point>();
-            }
-
-            public int MaxX { get; private set; }
-
-            public int MaxY { get; private set; }
-
-            public HashSet<Point> Points { get; }
-
-            public bool Update(Point p)
-            {
-                if (p.X < 0 || p.Y < 0)
-                {
-                    return false;
-                }
-
-                this.Points.Add(p);
-
-                this.MaxX = Math.Max(this.MaxX, p.X);
-                this.MaxY = Math.Max(this.MaxY, p.Y);
-
-                return true;
-            }
         }
     }
 }
