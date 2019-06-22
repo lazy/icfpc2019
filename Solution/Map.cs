@@ -28,6 +28,8 @@
                     }
                 }
             }
+
+            this.DistsFromCenter = new DistsFromCenter(new State(this));
         }
 
         public enum Cell
@@ -49,6 +51,8 @@
         public int StartX { get; }
 
         public int StartY { get; }
+
+        public DistsFromCenter DistsFromCenter { get; }
 
         public int Width => this.cells.GetLength(0);
 

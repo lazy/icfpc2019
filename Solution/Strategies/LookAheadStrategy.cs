@@ -27,11 +27,13 @@
 
         private bool symmetricGrowth;
         private int initSignGrowth;
+        private int recalcDistsFromCenterCount;
 
-        protected LookAheadStrategyBase(bool symmetricGrowth, int initSignGrowth)
+        protected LookAheadStrategyBase(bool symmetricGrowth, int initSignGrowth, int recalcDistsFromCenterCount)
         {
             this.symmetricGrowth = symmetricGrowth;
             this.initSignGrowth = initSignGrowth;
+            this.recalcDistsFromCenterCount = recalcDistsFromCenterCount;
         }
 
         public IEnumerable<Command> Solve(Map map)
@@ -44,9 +46,9 @@
             var bfsQueue = new Queue<(int, int, int)>();
             var bfsPath = new List<Command>();
 
-            var distsFromCenter = new DistsFromCenter(state);
+            var distsFromCenter = map.DistsFromCenter;
             var distsFromCenterTimer = 0;
-            var distsFromCenterTimerResetPeriod = Math.Max(10, map.CellsToVisit.Count() / 10);
+            var distsFromCenterTimerResetPeriod = Math.Max(10, 1 + (map.CellsToVisit.Count() / this.recalcDistsFromCenterCount));
 
             // for debugging purposes
             // var history = new List<(Command, State)>();
@@ -362,26 +364,50 @@
         }
     }
 
-    public class LookAheadSymetric : LookAheadStrategyBase
+    public class LookAheadSymmetricNoRecalc : LookAheadStrategyBase
     {
-        public LookAheadSymetric()
-            : base(true, 1)
+        public LookAheadSymmetricNoRecalc()
+            : base(true, 1, 1)
         {
         }
     }
 
-    public class LookAheadGrowLeft : LookAheadStrategyBase
+    public class LookAheadGrowLeftNoRecalc : LookAheadStrategyBase
     {
-        public LookAheadGrowLeft()
-            : base(false, 1)
+        public LookAheadGrowLeftNoRecalc()
+            : base(false, 1, 1)
         {
         }
     }
 
-    public class LookAheadGrowRight : LookAheadStrategyBase
+    public class LookAheadGrowRightNoRecalc : LookAheadStrategyBase
     {
-        public LookAheadGrowRight()
-            : base(false, -1)
+        public LookAheadGrowRightNoRecalc()
+            : base(false, -1, 1)
+        {
+        }
+    }
+
+    public class LookAheadSymmetricRecalc10 : LookAheadStrategyBase
+    {
+        public LookAheadSymmetricRecalc10()
+            : base(true, 1, 10)
+        {
+        }
+    }
+
+    public class LookAheadGrowLeftRecalc10 : LookAheadStrategyBase
+    {
+        public LookAheadGrowLeftRecalc10()
+            : base(false, 1, 10)
+        {
+        }
+    }
+
+    public class LookAheadGrowRightRecalc10 : LookAheadStrategyBase
+    {
+        public LookAheadGrowRightRecalc10()
+            : base(false, -1, 10)
         {
         }
     }
