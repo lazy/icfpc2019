@@ -28,6 +28,7 @@
             int negativeExtension = 1;
             int positiveExtension = 1;
             int drillTime = 0;
+            int speedTime = 0;
 
             var startPoint = new Point { X = map.StartX, Y = map.StartY };
             var toVisit = map.CellsToVisit.Select(x => new Point { X = x.Item1, Y = x.Item2 }).ToHashSet();
@@ -55,9 +56,14 @@
                         yield return UseDrill.Instance;
                         drillTime = 30;
                     }
+                    else if (map[startPoint.X, startPoint.Y] == Map.Cell.FastWheels)
+                    {
+                        yield return UseFastWheels.Instance;
+                        speedTime = 50;
+                    }
                 }
 
-                var result = this.RunBfs(map, startPoint, toVisit, positiveExtension, negativeExtension, drillTime);
+                var result = this.RunBfs(map, startPoint, toVisit, positiveExtension, negativeExtension, drillTime, speedTime);
                 if (result == null)
                 {
                     throw new Exception("The BFS should have returned a result");
@@ -67,6 +73,7 @@
                 {
                     yield return m;
                     --drillTime;
+                    --speedTime;
                 }
 
                 startPoint = result.FirstReachedPoint;
@@ -77,7 +84,7 @@
             }
         }
 
-        private BfsResult? RunBfs(Map map, Point startPoint, HashSet<Point> toVisit, int positiveExtension, int negativeExtension, int drillTime)
+        private BfsResult? RunBfs(Map map, Point startPoint, HashSet<Point> toVisit, int positiveExtension, int negativeExtension, int drillTime, int speedTime)
         {
             var queue = new Queue<Point>();
             var visited = new HashSet<Point>();
@@ -92,6 +99,7 @@
                 var curPoint = queue.Dequeue();
                 var curDist = dist[curPoint];
                 var drillActive = curDist < drillTime;
+                var speedActive = curDist < speedTime;
 
                 if (toVisit.Contains(curPoint))
                 {
@@ -134,8 +142,21 @@
                 for (var idx = 0; idx < Deltas.Length; ++idx)
                 {
                     var delta = Deltas[idx];
-                    var nextPoint = new Point { X = curPoint.X + delta.X, Y = curPoint.Y + delta.Y };
-                    if (!visited.Contains(nextPoint) && (map.IsFree(nextPoint.X, nextPoint.Y) || (drillActive && map.InBounds(nextPoint.X, nextPoint.Y) && map[nextPoint.X, nextPoint.Y] == Map.Cell.Obstacle)))
+                    var mul = speedActive ? 2 : 1;
+                    var intermediatePoint = new Point { X = curPoint.X + delta.X, Y = curPoint.Y + delta.Y };
+                    var nextPoint = new Point { X = curPoint.X + (delta.X * mul), Y = curPoint.Y + (delta.Y * mul) };
+
+                    bool CanGoThrough(int x, int y)
+                    {
+                        if (map.IsFree(x, y))
+                        {
+                            return true;
+                        }
+
+                        return drillActive && map.InBounds(x, y) && map[x, y] == Map.Cell.Obstacle;
+                    }
+
+                    if (!visited.Contains(nextPoint) && CanGoThrough(intermediatePoint.X, intermediatePoint.Y) && CanGoThrough(nextPoint.X, nextPoint.Y))
                     {
                         visited.Add(nextPoint);
                         queue.Enqueue(nextPoint);
