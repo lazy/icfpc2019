@@ -93,7 +93,7 @@
                 return (maxX, maxY, dists);
             }
 
-            var (furthestX, furthestY, dists1) = Traverse(state.X, state.Y);
+            var (furthestX, furthestY, dists1) = Traverse(state.Map.StartX, state.Map.StartY);
             (furthestX, furthestY, dists1) = Traverse(furthestX, furthestY);
 
             var mid = (1 + dists1[furthestX, furthestY]) / 2;
