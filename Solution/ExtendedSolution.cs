@@ -32,21 +32,21 @@
             string comment,
             string strategyName,
             string gitCommitId,
-            string moves)
+            string commands)
         {
             this.IsSuccessful = isSuccessful;
             this.TimeUnits = timeUnits;
             this.Comment = comment;
             this.StrategyName = strategyName;
             this.GitCommitId = gitCommitId;
-            this.Moves = moves;
+            this.Commands = commands;
         }
 
         public string? Comment { get; }
         public string GitCommitId { get; }
 
         public bool IsSuccessful { get; }
-        public string Moves { get; }
+        public string Commands { get; }
         public string StrategyName { get; }
         public int? TimeUnits { get; }
 
@@ -59,7 +59,7 @@
                 comment: stream.ReadLine(),
                 strategyName: stream.ReadLine(),
                 gitCommitId: stream.ReadLine(),
-                moves: stream.ReadLine());
+                commands: stream.ReadLine());
         }
 
         public bool IsBetterThan(ExtendedSolution that) =>
@@ -87,7 +87,7 @@
             stream.WriteLine(this.Comment);
             stream.WriteLine(this.StrategyName);
             stream.WriteLine(this.GitCommitId);
-            stream.WriteLine(this.Moves);
+            stream.WriteLine(this.Commands);
         }
     }
 }

@@ -30,6 +30,19 @@
                 var map = MapParser.Parse(File.ReadAllText(mapFile));
 
                 var extSolutionPath = $"Data/extended-solutions/{mapName}.ext-sol";
+
+                // Delete broken solutions
+                if (File.Exists(extSolutionPath))
+                {
+                    var oldSolution = ExtendedSolution.Load(extSolutionPath);
+                    var oldCommands = CommandsSerializer.Parse(oldSolution.Commands);
+                    if (!Emulator.MakeExtendedSolution(map, string.Empty, oldCommands).IsSuccessful)
+                    {
+                        File.Delete(extSolutionPath);
+                    }
+                }
+
+                // Generate new solutions
                 foreach (var strategy in strategies)
                 {
                     var solution = Emulator.MakeExtendedSolution(map, strategy);
@@ -38,7 +51,7 @@
                 }
 
                 var best = ExtendedSolution.Load(extSolutionPath);
-                File.WriteAllText($"Data/solutions/{mapName}.sol", best.Moves);
+                File.WriteAllText($"Data/solutions/{mapName}.sol", best.Commands);
                 Console.WriteLine($"  BEST ({best.StrategyName}): {best.IsSuccessful}/{best.TimeUnits}");
 
                 if (best.TimeUnits.HasValue)

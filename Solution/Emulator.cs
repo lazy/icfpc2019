@@ -31,7 +31,7 @@
                     comment: ex.Message.Replace("\n", "\\n"),
                     strategyName: strategyName,
                     gitCommitId: GitInfo.GitCommit,
-                    moves: string.Empty);
+                    commands: string.Empty);
             }
         }
 
