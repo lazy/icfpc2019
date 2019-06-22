@@ -110,7 +110,22 @@
         public int Y => this.y;
         public int Dir => this.dir;
         public int Hash => this.hash;
+        public int ManipulatorExtensionCount => this.manipulatorExtensionCount;
+        public (int, int)[] ManipConfig => this.manipConfig;
         public int WrappedCellsCount => this.wrappedCellsCount;
+
+        public static (int, int) TurnManip(int dir, (int, int) manipRelativeCoord)
+        {
+            var (dx, dy) = manipRelativeCoord;
+            return dir switch
+                {
+                0 => (dx, dy),
+                1 => (-dy, dx),
+                2 => (-dx, -dy),
+                3 => (dy, -dx),
+                _ => throw new ArgumentOutOfRangeException(nameof(dir)),
+                };
+        }
 
         public bool IsWrapped(int x, int y) => this.wrappedCells.TryFind((x, y), out var _);
 
@@ -195,19 +210,6 @@
             }
 
             return (wrappedCells, wrappedCellsCount, coordsHash);
-        }
-
-        private static (int, int) TurnManip(int dir, (int, int) manipRelativeCoord)
-        {
-            var (dx, dy) = manipRelativeCoord;
-            return dir switch
-                {
-                0 => (dx, dy),
-                1 => (-dy, dx),
-                2 => (-dx, -dy),
-                3 => (dy, -dx),
-                _ => throw new ArgumentOutOfRangeException(nameof(dir)),
-                };
         }
 
 #pragma warning disable SA1011
