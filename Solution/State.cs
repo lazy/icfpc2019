@@ -133,7 +133,7 @@
 
         public (int numVis, int maxDist) MaxUnwrappedVisibleDistFromCenter(int x, int y, int dir, DistsFromCenter dists)
         {
-            var numVis = 0;
+            var sumVis = 0;
             var max = 0;
             foreach (var delta in this.manipConfig)
             {
@@ -144,7 +144,7 @@
                     !this.wrappedCells.TryFind(manipCoord, out var _) &&
                     this.map.AreVisible(x, y, x + dx, y + dy))
                 {
-                    ++numVis;
+                    sumVis += dists.GetDist(x + dx, y + dy);
                     if (dists.GetDist(x + dx, y + dy) > max)
                     {
                         max = dists.GetDist(x + dx, y + dy);
@@ -152,7 +152,7 @@
                 }
             }
 
-            return (numVis, max);
+            return (sumVis, max);
         }
 
         public State? Next(Command command)
