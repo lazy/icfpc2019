@@ -39,15 +39,15 @@
                 mapFile =>
                 {
                     var log = new List<string>();
-
                     var mapName = Path.GetFileNameWithoutExtension(mapFile);
-                    log.Add($"Processing {mapName}");
-                    var map = MapParser.Parse(File.ReadAllText(mapFile));
 
                     if (!mapName.Contains("112"))
                     {
                         return;
                     }
+
+                    log.Add($"Processing {mapName}");
+                    var map = MapParser.Parse(File.ReadAllText(mapFile));
 
                     /*
                     // temporary for clonning debugging
@@ -74,13 +74,11 @@
                         oldBestStrategyName = oldSolution.StrategyName;
                     }
 
-                    var solutions = strategies
-                        .AsParallel()
+                    var solutions = strategies.AsParallel()
                         .Where(strategy => !(mapName.Contains("294") && strategy.Name.Contains("DumbBfs")))
                         .Select(strategy => (strategy, Emulator.MakeExtendedSolution(map, strategy)))
                         .ToArray();
 
-                    // Generate new solutions
                     foreach (var pair in solutions)
                     {
                         var (strategy, solution) = pair;

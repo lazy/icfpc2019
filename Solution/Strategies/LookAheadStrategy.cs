@@ -177,7 +177,7 @@
                     yield return Next(cmd);
                 }
 
-                while (state.ManipulatorExtensionCount > 0)
+                while (HaveManipulatorExtensions())
                 {
                     yield return Next(ExtendManipulator());
                 }
@@ -187,10 +187,16 @@
             {
                 Bfs(distsFromCenter);
 
+                if (HaveManipulatorExtensions())
+                {
+                    yield return Next(ExtendManipulator());
+                    continue;
+                }
+
                 for (var i = 0; i < bfsPath.Count; ++i)
                 {
                     // During walking we've found extension thingy - let's take it then!
-                    if (state.ManipulatorExtensionCount > 0)
+                    if (HaveManipulatorExtensions())
                     {
                         yield return Next(ExtendManipulator());
                         break;
@@ -221,6 +227,14 @@
             TryBeamSearchImpl();
 
             yield break;
+
+            bool HaveManipulatorExtensions()
+            {
+                var bot = state.GetBot(0);
+                return
+                    state.ManipulatorExtensionCount > 0 ||
+                    (map[bot.X, bot.Y] == Map.Cell.ManipulatorExtension && !state.IsPickedUp(bot.X, bot.Y));
+            }
 
             Command ExtendManipulator()
             {
