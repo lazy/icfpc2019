@@ -1,9 +1,11 @@
 ﻿namespace Icfpc2019.Runner
 {
     using System;
+    using System.Collections.Generic;
     using System.IO;
     using System.IO.Compression;
     using System.Linq;
+    using System.Threading.Tasks;
 
     using Icfpc2019.Solution;
     using Icfpc2019.Solution.Strategies;
@@ -23,46 +25,59 @@
 
             var totalTimeUnits = 0;
             var haveFailures = false;
-            foreach (var mapFile in Directory.EnumerateFiles("Data/maps", "*.desc"))
-            {
-                var mapName = Path.GetFileNameWithoutExtension(mapFile);
-                Console.WriteLine("Processing {0}", mapName);
-                var map = MapParser.Parse(File.ReadAllText(mapFile));
 
-                var extSolutionPath = $"Data/extended-solutions/{mapName}.ext-sol";
-
-                // Delete broken solutions
-                if (File.Exists(extSolutionPath))
+            Parallel.ForEach(
+                Directory.EnumerateFiles("Data/maps", "*.desc"),
+                mapFile =>
                 {
-                    var oldSolution = ExtendedSolution.Load(extSolutionPath);
-                    var oldCommands = CommandsSerializer.Parse(oldSolution.Commands);
-                    if (!Emulator.MakeExtendedSolution(map, string.Empty, oldCommands).IsSuccessful)
+                    var log = new List<string>();
+
+                    var mapName = Path.GetFileNameWithoutExtension(mapFile);
+                    log.Add($"Processing {mapName}");
+                    var map = MapParser.Parse(File.ReadAllText(mapFile));
+
+                    var extSolutionPath = $"Data/extended-solutions/{mapName}.ext-sol";
+
+                    // Delete broken solutions
+                    if (File.Exists(extSolutionPath))
                     {
-                        File.Delete(extSolutionPath);
+                        var oldSolution = ExtendedSolution.Load(extSolutionPath);
+                        var oldCommands = CommandsSerializer.Parse(oldSolution.Commands);
+                        if (!Emulator.MakeExtendedSolution(map, string.Empty, oldCommands).IsSuccessful)
+                        {
+                            File.Delete(extSolutionPath);
+                        }
                     }
-                }
 
-                // Generate new solutions
-                foreach (var strategy in strategies)
-                {
-                    var solution = Emulator.MakeExtendedSolution(map, strategy);
-                    solution.SaveIfBetter(extSolutionPath);
-                    Console.WriteLine($"  {strategy.Name}: {solution.IsSuccessful}/{solution.TimeUnits}");
-                }
+                    // Generate new solutions
+                    foreach (var strategy in strategies)
+                    {
+                        var solution = Emulator.MakeExtendedSolution(map, strategy);
+                        solution.SaveIfBetter(extSolutionPath);
+                        log.Add($"  {strategy.Name}: {solution.IsSuccessful}/{solution.TimeUnits}");
+                    }
 
-                var best = ExtendedSolution.Load(extSolutionPath);
-                File.WriteAllText($"Data/solutions/{mapName}.sol", best.Commands);
-                Console.WriteLine($"  BEST ({best.StrategyName}): {best.IsSuccessful}/{best.TimeUnits}");
+                    var best = ExtendedSolution.Load(extSolutionPath);
+                    File.WriteAllText($"Data/solutions/{mapName}.sol", best.Commands);
+                    log.Add($"  BEST ({best.StrategyName}): {best.IsSuccessful}/{best.TimeUnits}");
 
-                if (best.TimeUnits.HasValue)
-                {
-                    totalTimeUnits += best.TimeUnits.Value;
-                }
-                else
-                {
-                    haveFailures = true;
-                }
-            }
+                    lock (strategies)
+                    {
+                        if (best.TimeUnits.HasValue)
+                        {
+                            totalTimeUnits += best.TimeUnits.Value;
+                        }
+                        else
+                        {
+                            haveFailures = true;
+                        }
+
+                        foreach (var line in log)
+                        {
+                            Console.WriteLine(line);
+                        }
+                    }
+                });
 
             if (haveFailures)
             {
