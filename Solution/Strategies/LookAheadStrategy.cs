@@ -25,7 +25,7 @@
 
                         foreach (var forcedManipulatorExtensionsCount in forcedManipulatorExtensionsCount)
                         {
-                            foreach (var extraDepth in new[] { 5, 10 })
+                            foreach (var extraDepth in new[] { 0, 5, 10 })
                             {
                                 yield return new LookAheadStrategy(
                                     sym, growthSign, recalcsTime, forcedManipulatorExtensionsCount, extraDepth);
