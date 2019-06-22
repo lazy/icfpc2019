@@ -28,6 +28,16 @@
                 new UseManipulatorExtension(-1, 15),
                 new UseManipulatorExtension(1, 1));
 
+        [Fact]
+        public void ClonningParses() =>
+            TestSerialization(
+                "WWCA#F",
+                Move.Up,
+                Move.Up,
+                Clone.Instance,
+                Move.Left,
+                Move.Right);
+
         private static void TestSerialization(string serializedMoves, params Command[] commands)
         {
             var parsedMoves = CommandsSerializer.Parse(serializedMoves).ToArray();
