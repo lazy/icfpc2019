@@ -46,7 +46,7 @@
         {
             var map = MapParser.Parse("(0,0),(10,0),(10,10),(0,10)#(0,0)#(4,2),(6,2),(6,7),(4,7);(5,8),(6,8),(6,9),(5,9)#B(0,1);F(0,2);L(0,3);R(0,4);C(0,5);C(0,6);C(0,7);X(0,9)");
             var commands = CommandsSerializer.Parse("WWWWWWWWWCDDDDDDESSSSSS#CDDDDDDDDESSSSSSSS#CSSDDDESSSSS#ESSSSSSSSSQDDDDD");
-            var solution = Emulator.MakeExtendedSolution(map, "test,", commands);
+            var solution = Emulator.MakeExtendedSolution(map, "test", commands);
             Assert.True(solution.IsSuccessful);
             Assert.Equal(28, solution.TimeUnits);
         }
