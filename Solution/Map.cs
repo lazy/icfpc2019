@@ -18,6 +18,8 @@
             this.FindCellsToVisit();
 
             var numManipulatorExtensions = 0;
+            var numCloneBoosts = 0;
+            var numSpawnPoints = 0;
 
             // Mark all inaccessible free cells as edge
             for (var x = 0; x < this.Width; ++x)
@@ -29,15 +31,28 @@
                         this.cells[x, y] = Cell.Edge;
                     }
 
-                    if (this[x, y] == Cell.ManipulatorExtension)
+                    switch (this[x, y])
                     {
-                        ++numManipulatorExtensions;
+                        case Cell.ManipulatorExtension:
+                            ++numManipulatorExtensions;
+                            break;
+                        case Cell.Clone:
+                            ++numCloneBoosts;
+                            break;
+                        case Cell.SpawnPoint:
+                            ++numSpawnPoints;
+                            break;
+                        default:
+                            // Other cells need no special handling
+                            break;
                     }
                 }
             }
 
             this.DistsFromCenter = new DistsFromCenter(new State(this));
             this.NumManipulatorExtensions = numManipulatorExtensions;
+            this.NumCloneBoosts = numCloneBoosts;
+            this.NumSpawnPoints = numSpawnPoints;
         }
 
         public enum Cell
@@ -63,6 +78,8 @@
         public DistsFromCenter DistsFromCenter { get; }
 
         public int NumManipulatorExtensions { get; }
+        public int NumCloneBoosts { get; }
+        public int NumSpawnPoints { get; }
 
         public int Width => this.cells.GetLength(0);
 
