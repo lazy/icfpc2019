@@ -20,7 +20,7 @@
             @"xv.........x",
             @"xxxxxxxxxxxx");
 
-        [Fact]
+        [Fact(Skip="Map.AreVisible() is limited for now")]
         public void SampleSolution1IsValid() =>
             this.TestOnSampleMap(
                 "WDWB(1,2)DSQDB(-3,1)DDDWWWWWWWSSEDSSDWWESSSSSAAAAAQQWWWWWWW",

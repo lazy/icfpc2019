@@ -2,6 +2,7 @@
 {
     using System;
     using System.Collections.Generic;
+    using System.Diagnostics;
     using System.Linq;
 
     public class DumbBfs : IStrategy
@@ -24,12 +25,29 @@
 
         public IEnumerable<Command> Solve(Map map)
         {
+            int negativeExtension = 1;
+            int positiveExtension = 1;
+
             var startPoint = new Point { X = map.StartX, Y = map.StartY };
             var toVisit = map.CellsToVisit.Select(x => new Point { X = x.Item1, Y = x.Item2 }).ToHashSet();
 
             while (toVisit.Count > 0)
             {
-                var result = this.RunBfs(map, startPoint, toVisit);
+                if (map.IsFree(startPoint.X, startPoint.Y) && map[startPoint.X, startPoint.Y] == Map.Cell.ManipulatorExtension)
+                {
+                    if (positiveExtension == negativeExtension)
+                    {
+                        yield return new UseManipulatorExtension(1, positiveExtension + 1);
+                        ++positiveExtension;
+                    }
+                    else
+                    {
+                        yield return new UseManipulatorExtension(1, -(negativeExtension + 1));
+                        ++negativeExtension;
+                    }
+                }
+
+                var result = this.RunBfs(map, startPoint, toVisit, positiveExtension, negativeExtension);
                 if (result == null)
                 {
                     throw new Exception("The BFS should have returned a result");
@@ -48,7 +66,7 @@
             }
         }
 
-        private BfsResult? RunBfs(Map map, Point startPoint, HashSet<Point> toVisit)
+        private BfsResult? RunBfs(Map map, Point startPoint, HashSet<Point> toVisit, int positiveExtension, int negativeExtension)
         {
             var queue = new Queue<Point>();
             var visited = new HashSet<Point>();
@@ -73,10 +91,10 @@
                         // FIXME: this code assumes we face right and do not rotate ever
                         result.TouchedPoints.Add(point);
 
-                        for (var tdy = -1; tdy <= 1; ++tdy)
+                        for (var tdy = -negativeExtension; tdy <= positiveExtension; ++tdy)
                         {
                             var touchCandidate = new Point { X = point.X + 1, Y = point.Y + tdy };
-                            if (map.IsFree(touchCandidate.X, touchCandidate.Y))
+                            if (map.AreVisible(point.X, point.Y, touchCandidate.X, touchCandidate.Y))
                             {
                                 result.TouchedPoints.Add(touchCandidate);
                             }

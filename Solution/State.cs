@@ -109,9 +109,8 @@
             {
                 var (dx, dy) = TurnManip(dir, delta);
 
-                // TODO: check visibility
                 var manipCoord = (x + dx, y + dy);
-                if (this.map.IsFree(x + dx, y + dy) && !this.wrappedCells.TryFind(manipCoord, out var _))
+                if (this.map.AreVisible(x, y, x + dx, y + dy) && !this.wrappedCells.TryFind(manipCoord, out var _))
                 {
                     return true;
                 }
@@ -167,9 +166,8 @@
             {
                 var (dx, dy) = TurnManip(dir, delta);
 
-                // TODO: check visibility
                 var manipCoord = (x + dx, y + dy);
-                if (map.IsFree(x + dx, y + dy) && !wrappedCells.TryFind(manipCoord, out var _))
+                if (map.AreVisible(x, y, x + dx, y + dy) && !wrappedCells.TryFind(manipCoord, out var _))
                 {
                     wrappedCells = wrappedCells.AddOrUpdate(manipCoord, true);
                     ++wrappedCellsCount;

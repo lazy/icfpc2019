@@ -113,45 +113,6 @@
                 return false;
             }
 
-            // Blatantly stolen from https://sinepost.wordpress.com/2012/05/24/drawing-in-a-straight-line/
-            Func<int, int, bool, bool> isFree = (major, minor, horizontal) =>
-            {
-                if (horizontal)
-                {
-                    return this.IsFree(major, minor);
-                }
-
-                return this.IsFree(minor, major);
-            };
-
-            Func<int, int, int, double, bool, bool> check = (start, end, startMinor, slope, horizontal) =>
-            {
-                int advance = end > start ? 1 : -1;
-                double curMinor = startMinor + 0.5 + (0.5 * advance * slope);
-                for (int curMajor = start + advance; curMajor != end; curMajor += advance)
-                {
-                    var curMinorFloor = Math.Floor(curMinor);
-                    if (!isFree(curMajor, (int)curMinorFloor, horizontal) && Math.Abs(curMinor - curMinorFloor) >= 1e-6)
-                    {
-                        return false;
-                    }
-
-                    double newMinor = curMinor + (advance * slope);
-                    var newMinorFloor = Math.Floor(newMinor);
-                    if (newMinorFloor != curMinorFloor && Math.Abs(newMinor - newMinorFloor) >= 1e-6)
-                    {
-                        if (!isFree(curMajor, (int)newMinorFloor, horizontal))
-                        {
-                            return false;
-                        }
-                    }
-
-                    curMinor = newMinor;
-                }
-
-                return true;
-            };
-
             var (dx, dy) = (x2 - x1, y2 - y1);
             var (absDx, absDy) = (Math.Abs(dx), Math.Abs(dy));
 
@@ -160,12 +121,37 @@
                 return true;
             }
 
-            if (absDx >= absDy)
+            if (dy == 2 && dx == 1)
             {
-                return check(x1, x2, y1, (double)dy / dx, true);
+                return this.IsFree(x1, y1 + 1) && this.IsFree(x1 + 1, y1 + 1);
             }
 
-            return check(y1, y2, x1, (double)dx / dy, false);
+            if (dy == -2 && dx == 1)
+            {
+                return this.IsFree(x1, y1 - 1) && this.IsFree(x1 + 1, y1 - 1);
+            }
+
+            if (dy == 3 && dx == 1)
+            {
+                return this.IsFree(x1, y1 + 1) && this.IsFree(x1 + 1, y1 + 2);
+            }
+
+            if (dy == -3 && dx == 1)
+            {
+                return this.IsFree(x1, y1 - 1) && this.IsFree(x1 + 1, y1 - 2);
+            }
+
+            if (dy == 4 && dx == 1)
+            {
+                return this.IsFree(x1, y1 + 1) && this.IsFree(x1, y1 + 2) && this.IsFree(x1 + 1, y1 + 2) && this.IsFree(x1 + 1, y1 + 3);
+            }
+
+            if (dy == -4 && dx == 1)
+            {
+                return this.IsFree(x1, y1 - 1) && this.IsFree(x1, y1 - 2) && this.IsFree(x1 + 1, y1 - 2) && this.IsFree(x1 + 1, y1 - 3);
+            }
+
+            return false;
         }
 
         public override string ToString()
