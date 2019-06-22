@@ -57,42 +57,33 @@ namespace Icfpc2019.Solution
 
             foreach (var currentPoint in outPts)
             {
-                var queue = new Queue<Point>();
-                var prev = new Dictionary<Point, Point>();
-                var visited = new HashSet<Point>();
+                this.ConnectPointWithBoundary(currentPoint);
+            }
 
-                queue.Enqueue(currentPoint);
-                visited.Add(currentPoint);
+            this.CollectContourPoints();
 
-                while (queue.Count > 0)
+            if (this.contourPoints.Count <= this.vMin)
+            {
+                var rng = new Random();
+                for (var iter = 0; iter < this.vMin - this.contourPoints.Count; ++iter)
                 {
-                    var cur = queue.Dequeue();
-                    if (!this.GoodXy(cur.X, cur.Y))
+                    while (true)
                     {
-                        while (prev.ContainsKey(cur))
+                        var rndPoint = new Point
                         {
-                            this.outsidePoints.Add(cur);
-                            cur = prev[cur];
-                        }
-
-                        break;
-                    }
-
-                    for (var idx = 0; idx < 4; ++idx)
-                    {
-                        var nextPoint = new Point { X = cur.X + dx[idx], Y = cur.Y + dy[idx] };
-                        if (!visited.Contains(nextPoint) && !this.insidePoints.Contains(nextPoint))
+                            X = rng.Next(this.tSize),
+                            Y = rng.Next(this.tSize),
+                        };
+                        if (!this.outsidePoints.Contains(rndPoint) && !this.insidePoints.Contains(rndPoint))
                         {
-                            queue.Enqueue(nextPoint);
-                            prev[nextPoint] = cur;
-                            visited.Add(nextPoint);
+                            this.ConnectPointWithBoundary(rndPoint);
+                            break;
                         }
                     }
                 }
             }
 
             this.CollectContourPoints();
-            Trace.Assert(this.contourPoints.Count <= this.vMax);
         }
 
         public Bitmap SaveToBitmap()
@@ -218,6 +209,44 @@ namespace Icfpc2019.Solution
                 }
 
                 this.contourPoints.Add(new Point { X = fromX + x, Y = fromY + y });
+            }
+
+            Trace.Assert(this.contourPoints.Count <= this.vMax);
+        }
+
+        private void ConnectPointWithBoundary(Point currentPoint)
+        {
+            var queue = new Queue<Point>();
+            var prev = new Dictionary<Point, Point>();
+            var visited = new HashSet<Point>();
+
+            queue.Enqueue(currentPoint);
+            visited.Add(currentPoint);
+
+            while (queue.Count > 0)
+            {
+                var cur = queue.Dequeue();
+                if (!this.GoodXy(cur.X, cur.Y))
+                {
+                    while (prev.ContainsKey(cur))
+                    {
+                        this.outsidePoints.Add(cur);
+                        cur = prev[cur];
+                    }
+
+                    break;
+                }
+
+                for (var idx = 0; idx < 4; ++idx)
+                {
+                    var nextPoint = new Point { X = cur.X + dx[idx], Y = cur.Y + dy[idx] };
+                    if (!visited.Contains(nextPoint) && !this.insidePoints.Contains(nextPoint))
+                    {
+                        queue.Enqueue(nextPoint);
+                        prev[nextPoint] = cur;
+                        visited.Add(nextPoint);
+                    }
+                }
             }
         }
 
