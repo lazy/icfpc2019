@@ -19,7 +19,7 @@
 
             var strategies =
                 typeof(DumbBfs).Assembly.DefinedTypes
-                    .Where(type => type.IsClass && typeof(IStrategy).IsAssignableFrom(type))
+                    .Where(type => type.IsClass && !type.IsAbstract && typeof(IStrategy).IsAssignableFrom(type))
                     .Select(type => (IStrategy)Activator.CreateInstance(type))
                     .ToArray();
 
@@ -52,6 +52,11 @@
                     // Generate new solutions
                     foreach (var strategy in strategies)
                     {
+                        if (mapName.Contains("294") && strategy.Name.Contains("DumbBfs"))
+                        {
+                            continue;
+                        }
+
                         var solution = Emulator.MakeExtendedSolution(map, strategy);
                         solution.SaveIfBetter(extSolutionPath);
                         log.Add($"  {strategy.Name}: {solution.IsSuccessful}/{solution.TimeUnits}");
