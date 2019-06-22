@@ -20,6 +20,8 @@
         private readonly int x;
         private readonly int y;
         private readonly int dir;
+        private readonly int coordsHash;
+        private readonly int hash;
         private readonly ImHashSet wrappedCells;
         private readonly int wrappedCellsCount;
         private readonly ImHashSet pickedUpBoosterCoords;
@@ -42,7 +44,7 @@
                 map.StartX,
                 map.StartY,
                 dir: 0,
-                wrapped: UpdateWrappedCells(map, map.StartX, map.StartY, 0, InitManipConfig, ImHashSet.Empty, 0),
+                wrapped: UpdateWrappedCells(map, map.StartX, map.StartY, 0, InitManipConfig, ImHashSet.Empty, 0, 0),
                 pickedUpBoosterCoords: ImHashSet.Empty,
                 drilledCells: ImHashSet.Empty,
                 manipConfig: InitManipConfig,
@@ -62,7 +64,7 @@
             int x,
             int y,
             int dir,
-            (ImHashSet Cells, int CellsCount) wrapped,
+            (ImHashSet Cells, int CellsCount, int coordsHash) wrapped,
             ImHashSet pickedUpBoosterCoords,
             ImHashSet drilledCells,
             (int, int)[] manipConfig,
@@ -79,6 +81,14 @@
             this.x = x;
             this.y = y;
             this.dir = dir;
+            this.coordsHash = wrapped.coordsHash;
+            this.hash = HashCode.Combine(
+                x,
+                y,
+                dir,
+                wrapped.coordsHash,
+                manipConfig.GetHashCode(),
+                fastWheelsCount + drillsCount + teleportsCount + cloneCount);
             this.wrappedCells = wrapped.Cells;
             this.wrappedCellsCount = wrapped.CellsCount;
             this.pickedUpBoosterCoords = pickedUpBoosterCoords;
@@ -99,24 +109,32 @@
         public int X => this.x;
         public int Y => this.y;
         public int Dir => this.dir;
+        public int Hash => this.hash;
         public int WrappedCellsCount => this.wrappedCellsCount;
 
         public bool IsWrapped(int x, int y) => this.wrappedCells.TryFind((x, y), out var _);
 
-        public bool UnwrappedVisible(int x, int y, int dir)
+        public bool UnwrappedVisible(int x, int y, int dir) =>
+            this.MaxUnwrappedVisibleDistFromCenter(x, y, dir) != 0;
+
+        public int MaxUnwrappedVisibleDistFromCenter(int x, int y, int dir)
         {
+            var max = 0;
             foreach (var delta in this.manipConfig)
             {
                 var (dx, dy) = TurnManip(dir, delta);
 
                 var manipCoord = (x + dx, y + dy);
-                if (this.map.AreVisible(x, y, x + dx, y + dy) && !this.wrappedCells.TryFind(manipCoord, out var _))
+                if (this.map.IsFree(x + dx, y + dy) &&
+                    !this.wrappedCells.TryFind(manipCoord, out var _) &&
+                    this.map.GetDistFromCenter(x + dx, y + dy) > max &&
+                    this.map.AreVisible(x, y, x + dx, y + dy))
                 {
-                    return true;
+                    max = this.map.GetDistFromCenter(x + dx, y + dy);
                 }
             }
 
-            return false;
+            return max;
         }
 
         public State? Next(Command command)
@@ -153,14 +171,15 @@
             }
         }
 
-        private static (ImHashSet wrappedCells, int wrappedCellsCount) UpdateWrappedCells(
+        private static (ImHashSet wrappedCells, int wrappedCellsCount, int coordsHash) UpdateWrappedCells(
             Map map,
             int x,
             int y,
             int dir,
             (int, int)[] manipConfig,
             ImHashSet wrappedCells,
-            int wrappedCellsCount)
+            int wrappedCellsCount,
+            int coordsHash)
         {
             foreach (var delta in manipConfig)
             {
@@ -171,10 +190,11 @@
                 {
                     wrappedCells = wrappedCells.AddOrUpdate(manipCoord, true);
                     ++wrappedCellsCount;
+                    coordsHash += HashCode.Combine(x + dx, y + dy);
                 }
             }
 
-            return (wrappedCells, wrappedCellsCount);
+            return (wrappedCells, wrappedCellsCount, coordsHash);
         }
 
         private static (int, int) TurnManip(int dir, (int, int) manipRelativeCoord)
@@ -217,7 +237,8 @@
                 dir ?? this.dir,
                 manipConfig ?? this.manipConfig,
                 this.wrappedCells,
-                this.wrappedCellsCount);
+                this.wrappedCellsCount,
+                this.coordsHash);
 
             return new State(
                 this.map,
