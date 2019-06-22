@@ -114,20 +114,27 @@
 
         public bool IsWrapped(int x, int y) => this.wrappedCells.TryFind((x, y), out var _);
 
-        public bool UnwrappedVisible(int x, int y, int dir)
+        public bool UnwrappedVisible(int x, int y, int dir) =>
+            this.MaxUnwrappedVisibleDistFromCenter(x, y, dir) != int.MinValue;
+
+        public int MaxUnwrappedVisibleDistFromCenter(int x, int y, int dir)
         {
+            var max = int.MinValue;
             foreach (var delta in this.manipConfig)
             {
                 var (dx, dy) = TurnManip(dir, delta);
 
                 var manipCoord = (x + dx, y + dy);
-                if (this.map.AreVisible(x, y, x + dx, y + dy) && !this.wrappedCells.TryFind(manipCoord, out var _))
+                if (this.map.IsFree(x + dx, y + dy) &&
+                    !this.wrappedCells.TryFind(manipCoord, out var _) &&
+                    this.map.GetDistFromCenter(x + dx, y + dy) > max &&
+                    this.map.AreVisible(x, y, x + dx, y + dy))
                 {
-                    return true;
+                    max = this.map.GetDistFromCenter(x + dx, y + dy);
                 }
             }
 
-            return false;
+            return max;
         }
 
         public State? Next(Command command)

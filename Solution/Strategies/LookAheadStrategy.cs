@@ -9,7 +9,7 @@
 
     public class LookAheadStrategy : IStrategy
     {
-        private const int BeamSize = 10;
+        private const int BeamSize = 64;
         private const int BeamSearchDepth = 10;
 
         private static readonly Command[] BeamSearchCommands =
@@ -73,9 +73,14 @@
                 }
             }
 
+            // just call it to silence compiler
+            TryBeamSearchImpl();
+
             yield break;
 
-            Command? TryBeamSearch()
+            Command? TryBeamSearch() => null;
+
+            Command? TryBeamSearchImpl()
             {
                 var curWrappedCount = state.WrappedCellsCount;
                 var beam = new FastPriorityQueue<WeightedState>(BeamSize + 1);
@@ -99,13 +104,11 @@
 
                             if (nextState != null)
                             {
-                                /*
                                 if (seenStates.Contains(nextState.Hash))
                                 {
-                                    ++numCollisions;
+                                    // ++numCollisions;
                                     continue;
                                 }
-                                */
 
                                 seenStates.Add(nextState.Hash);
                                 if (beam.Count < BeamSize ||
@@ -151,69 +154,53 @@
                 return firstCommand;
 
                 float CalcPriority(State newState) =>
-                    newState.WrappedCellsCount + (0.01f * (Math.Abs(newState.X - state.X) + Math.Abs(newState.Y - state.Y)));
-            }
+                    map.GetDistFromCenter(newState.X, newState.Y) +
+                    newState.WrappedCellsCount +
+                    (0.01f * (Math.Abs(newState.X - state.X) + Math.Abs(newState.Y - state.Y)));
+                }
 
             void Bfs()
             {
                 ++generation;
                 bfsQueue.Clear();
                 bfsQueue.Enqueue((state.X, state.Y, state.Dir));
-                bfsNodes[state.X, state.Y, state.Dir] = new BfsNode(generation, -1);
+                bfsNodes[state.X, state.Y, state.Dir] = new BfsNode(generation, -1, 0);
+
+                int? maxDepth = null;
+                (int, int, int, int distFromCenter)? bestDest = null;
+
                 while (bfsQueue.Count > 0)
                 {
                     var (x, y, dir) = bfsQueue.Dequeue();
+                    var depth = bfsNodes[x, y, dir].Depth;
 
                     Debug.Assert(bfsNodes[x, y, dir].Generation == generation, "oops");
+
+                    if (maxDepth != null && depth > maxDepth.Value)
+                    {
+                        if (bestDest == null)
+                        {
+                            throw new InvalidOperationException();
+                        }
+
+                        var (destX, destY, destDir, distFromCenter) = bestDest.Value;
+                        FindBackwardPath(destX, destY, destDir);
+                        return;
+                    }
 
                     // path found
                     if (state.UnwrappedVisible(x, y, dir))
                     {
-                        bfsPath.Clear();
-                        var xx = x;
-                        var yy = y;
-                        while ((x, y, dir) != (state.X, state.Y, state.Dir))
+                        if (maxDepth == null)
                         {
-                            Debug.Assert(bfsNodes[x, y, dir].Generation == generation, "oops");
-
-                            var moveIdx = bfsNodes[x, y, dir].MoveIdx;
-                            if (moveIdx >= 0)
-                            {
-                                var move = Move.All[moveIdx];
-                                bfsPath.Add(move);
-                                x -= move.Dx;
-                                y -= move.Dy;
-                            }
-                            else
-                            {
-                                var ddir = -moveIdx;
-                                dir = (4 + dir - ddir) & 3;
-                                bfsPath.Add(ddir == 1 ? Turn.Left : Turn.Right);
-                            }
+                            maxDepth = depth + 5;
                         }
 
-                        bfsPath.Reverse();
-
-                        // if there's more than one command, then filter out all turns
-                        if (bfsPath.Count > 1)
+                        var distFromCenter = state.MaxUnwrappedVisibleDistFromCenter(x, y, dir);
+                        if (bestDest == null || distFromCenter > bestDest.Value.distFromCenter)
                         {
-                            var writeIdx = 0;
-                            for (var i = 0; i < bfsPath.Count; ++i)
-                            {
-                                if (!(bfsPath[i] is Turn))
-                                {
-                                    bfsPath[writeIdx++] = bfsPath[i];
-                                }
-                            }
-
-                            // degenerate case: 180 degree turn
-                            if (writeIdx != 0)
-                            {
-                                bfsPath.RemoveRange(writeIdx, bfsPath.Count - writeIdx);
-                            }
+                            bestDest = (x, y, dir, distFromCenter);
                         }
-
-                        return;
                     }
 
                     for (var i = 0; i < Move.All.Length; ++i)
@@ -223,7 +210,7 @@
                         var ny = y + move.Dy;
                         if (map.IsFree(nx, ny) && bfsNodes[nx, ny, dir].Generation != generation)
                         {
-                            bfsNodes[nx, ny, dir] = new BfsNode(generation, i);
+                            bfsNodes[nx, ny, dir] = new BfsNode(generation, i, depth + 1);
                             bfsQueue.Enqueue((nx, ny, dir));
                         }
                     }
@@ -234,26 +221,77 @@
                         var ndir = (dir + ddir) & 3;
                         if (bfsNodes[x, y, ndir].Generation != generation)
                         {
-                            bfsNodes[x, y, ndir] = new BfsNode(generation, -ddir);
+                            bfsNodes[x, y, ndir] = new BfsNode(generation, -ddir, depth + 1);
                             bfsQueue.Enqueue((x, y, ndir));
                         }
                     }
                 }
 
-                throw new InvalidOperationException("Couldn't find any path with BFS!");
+                var (finalX, finalY, finalDir, _) =
+                    bestDest ?? throw new InvalidOperationException("Couldn't find any path with BFS!");
+                FindBackwardPath(finalX, finalY, finalDir);
+            }
+
+            void FindBackwardPath(int x, int y, int dir)
+            {
+                bfsPath.Clear();
+                var xx = x;
+                var yy = y;
+                while ((x, y, dir) != (state.X, state.Y, state.Dir))
+                {
+                    Debug.Assert(bfsNodes[x, y, dir].Generation == generation, "oops");
+
+                    var moveIdx = bfsNodes[x, y, dir].MoveIdx;
+                    if (moveIdx >= 0)
+                    {
+                        var move = Move.All[moveIdx];
+                        bfsPath.Add(move);
+                        x -= move.Dx;
+                        y -= move.Dy;
+                    }
+                    else
+                    {
+                        var ddir = -moveIdx;
+                        dir = (4 + dir - ddir) & 3;
+                        bfsPath.Add(ddir == 1 ? Turn.Left : Turn.Right);
+                    }
+                }
+
+                bfsPath.Reverse();
+
+                // if there's more than one command, then filter out all turns
+                if (bfsPath.Count > 1)
+                {
+                    var writeIdx = 0;
+                    for (var i = 0; i < bfsPath.Count; ++i)
+                    {
+                        if (!(bfsPath[i] is Turn))
+                        {
+                            bfsPath[writeIdx++] = bfsPath[i];
+                        }
+                    }
+
+                    // degenerate case: 180 degree turn
+                    if (writeIdx != 0)
+                    {
+                        bfsPath.RemoveRange(writeIdx, bfsPath.Count - writeIdx);
+                    }
+                }
             }
         }
 
         private struct BfsNode
         {
-            public BfsNode(int generation, int moveIdx)
+            public BfsNode(int generation, int moveIdx, int depth)
             {
                 this.Generation = generation;
                 this.MoveIdx = moveIdx;
+                this.Depth = depth;
             }
 
             public int Generation { get; }
             public int MoveIdx { get; }
+            public int Depth { get; }
         }
 
         private class WeightedState : FastPriorityQueueNode

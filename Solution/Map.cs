@@ -7,6 +7,7 @@
     public class Map
     {
         private readonly Cell[,] cells;
+        private readonly int[,] cellDists;
         private readonly HashSet<(int, int)> cellsToVisit;
 
         public Map(int startX, int startY, Cell[,] cells)
@@ -25,6 +26,36 @@
                     if (this.IsFree(x, y) && !this.cellsToVisit.Contains((x, y)))
                     {
                         this.cells[x, y] = Cell.Edge;
+                    }
+                }
+            }
+
+            // Calculate cell dists
+            this.cellDists = new int[this.Width, this.Height];
+            var queue = new Queue<(int, int)>();
+
+            var (centerX, centerY) = this.FindGraphCenter();
+
+            queue.Enqueue((centerX, centerY));
+            this.cellDists[centerX, centerY] = 1;
+
+            while (queue.Count > 0)
+            {
+                var (x, y) = queue.Dequeue();
+
+                TryAdd(-1, 0);
+                TryAdd(1, 0);
+                TryAdd(0, -1);
+                TryAdd(0, 1);
+
+                void TryAdd(int dx, int dy)
+                {
+                    var nx = x + dx;
+                    var ny = y + dy;
+                    if (this.IsFree(nx, ny) && this.cellDists[nx, ny] == 0)
+                    {
+                        this.cellDists[nx, ny] = this.cellDists[x, y] + 1;
+                        queue.Enqueue((nx, ny));
                     }
                 }
             }
@@ -110,6 +141,8 @@
             var cell = this[x, y];
             return cell != Cell.Edge && cell != Cell.Obstacle;
         }
+
+        public int GetDistFromCenter(int x, int y) => this.cellDists[x, y];
 
         public bool AreVisible(int x1, int y1, int x2, int y2)
         {
@@ -207,6 +240,12 @@
                 Cell.Clone => 'C',
                 _ => throw new Exception($"Invalid enum value: {cell}"),
                 };
+
+        private (int, int) FindGraphCenter()
+        {
+            // Ha-ha
+            return (this.StartX, this.StartY);
+        }
 
         private void FindCellsToVisit()
         {
