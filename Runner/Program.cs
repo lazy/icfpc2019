@@ -27,7 +27,7 @@
             var haveFailures = false;
 
             Parallel.ForEach(
-                Directory.EnumerateFiles("Data/maps", "*.desc"),
+                Directory.EnumerateFiles("Data/maps", "*.desc").Reverse(),
                 mapFile =>
                 {
                     var log = new List<string>();
