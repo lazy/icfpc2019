@@ -126,6 +126,8 @@
 
         public bool IsWrapped(int x, int y) => this.wrappedCells.TryFind((x, y), out var _);
 
+        public bool IsPickedUp(int x, int y) => this.pickedUpBoosterCoords.TryFind((x, y), out var _);
+
         public bool UnwrappedVisible(int x, int y, int dir, DistsFromCenter dists) =>
             this.MaxUnwrappedVisibleDistFromCenter(x, y, dir, dists) != 0;
 

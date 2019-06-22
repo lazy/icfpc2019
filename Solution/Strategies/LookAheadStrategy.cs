@@ -7,7 +7,32 @@
 
     using Priority_Queue;
 
-    public abstract class LookAheadStrategyBase : IStrategy
+    public static class LookAheadFactory
+    {
+        public static IEnumerable<IStrategy> MakeStrategies()
+        {
+            foreach (var recalcsTime in new[] { 1, 10 })
+            {
+                foreach (var sym in new[] { true, false })
+                {
+                    foreach (var growthSign in new[] { -1, 1 })
+                    {
+                        if (sym && growthSign < 0)
+                        {
+                            continue;
+                        }
+
+                        foreach (var forcedManipulatorExtensionsCount in new[] { 0, 1, 2, 3, 4, 8 })
+                        {
+                            yield return new LookAheadStrategy(sym, growthSign, recalcsTime, forcedManipulatorExtensionsCount);
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    public class LookAheadStrategy : IStrategy
     {
         private const int BeamSize = 64;
         private const int BeamSearchDepth = 10;
@@ -25,19 +50,25 @@
             // UseFastWheels.Instance,
         };
 
-        private bool symmetricGrowth;
-        private int initSignGrowth;
-        private int recalcDistsFromCenterCount;
+        private readonly bool symmetricGrowth;
+        private readonly int initSignGrowth;
+        private readonly int recalcDistsFromCenterCount;
+        private readonly int forcedManipulatorExtensionsCount;
 
-        protected LookAheadStrategyBase(bool symmetricGrowth, int initSignGrowth, int recalcDistsFromCenterCount)
+        public LookAheadStrategy(bool symmetricGrowth, int initSignGrowth, int recalcDistsFromCenterCount, int forcedManipulatorExtensionsCount)
         {
             this.symmetricGrowth = symmetricGrowth;
             this.initSignGrowth = initSignGrowth;
             this.recalcDistsFromCenterCount = recalcDistsFromCenterCount;
+            this.forcedManipulatorExtensionsCount = forcedManipulatorExtensionsCount;
         }
+
+        public string Name => $"{nameof(LookAheadStrategy)}_{(this.symmetricGrowth ? "Sym" : "Assym")}_{(this.initSignGrowth > 0 ? "L" : "R")}_{this.recalcDistsFromCenterCount}_{this.forcedManipulatorExtensionsCount}";
 
         public IEnumerable<Command> Solve(Map map)
         {
+            var forcedExtensionsLeft = Math.Min(map.NumManipulatorExtensions, this.forcedManipulatorExtensionsCount);
+
             var state = new State(map);
             var generation = 0;
 
@@ -65,8 +96,26 @@
                     distsFromCenterTimer = 0;
                 }
 
+                if (cmd is UseManipulatorExtension)
+                {
+                    --forcedExtensionsLeft;
+                }
+
                 // history.Add((cmd, state));
                 return cmd;
+            }
+
+            while (forcedExtensionsLeft > 0)
+            {
+                foreach (var cmd in FindManipulatorExtension())
+                {
+                    yield return Next(cmd);
+                }
+
+                while (state.ManipulatorExtensionCount > 0)
+                {
+                    yield return Next(ExtendManipulator());
+                }
             }
 
             while (state.WrappedCellsCount != map.CellsToVisit.Count)
@@ -78,27 +127,7 @@
                     // During walking we've found extension thingy - let's take it then!
                     if (state.ManipulatorExtensionCount > 0)
                     {
-                        if (this.symmetricGrowth)
-                        {
-                            var extensionDist = state.ManipConfig.Length / 2;
-                            var sign = this.initSignGrowth * (state.ManipConfig.Length % 2 == 0 ? 1 : -1);
-                            var (dx, dy) = State.TurnManip(state.Dir, (1, extensionDist * sign));
-                            yield return Next(new UseManipulatorExtension(dx, dy));
-                        }
-                        else
-                        {
-                            var extensionDist = state.ManipConfig.Length - 2;
-                            var sign = this.initSignGrowth;
-                            if (extensionDist > 4)
-                            {
-                                extensionDist -= 3;
-                                sign *= -1;
-                            }
-
-                            var (dx, dy) = State.TurnManip(state.Dir, (1, extensionDist * sign));
-                            yield return Next(new UseManipulatorExtension(dx, dy));
-                        }
-
+                        yield return Next(ExtendManipulator());
                         break;
                     }
 
@@ -127,6 +156,30 @@
             TryBeamSearchImpl();
 
             yield break;
+
+            Command ExtendManipulator()
+            {
+                if (this.symmetricGrowth)
+                {
+                    var extensionDist = state.ManipConfig.Length / 2;
+                    var sign = this.initSignGrowth * (state.ManipConfig.Length % 2 == 0 ? 1 : -1);
+                    var (dx, dy) = State.TurnManip(state.Dir, (1, extensionDist * sign));
+                    return new UseManipulatorExtension(dx, dy);
+                }
+                else
+                {
+                    var extensionDist = state.ManipConfig.Length - 2;
+                    var sign = this.initSignGrowth;
+                    if (extensionDist > 4)
+                    {
+                        extensionDist -= 3;
+                        sign *= -1;
+                    }
+
+                    var (dx, dy) = State.TurnManip(state.Dir, (1, extensionDist * sign));
+                    return new UseManipulatorExtension(dx, dy);
+                }
+            }
 
             Command? TryBeamSearch() => null; // TryBeamSearchImpl();
 
@@ -203,6 +256,39 @@
                 }
 
                 return firstCommand;
+            }
+
+            IEnumerable<Command> FindManipulatorExtension()
+            {
+                ++generation;
+                bfsQueue.Clear();
+                bfsQueue.Enqueue((state.X, state.Y, state.Dir));
+                bfsNodes[state.X, state.Y, state.Dir] = new BfsNode(generation, -1, 0);
+                while (bfsQueue.Count > 0)
+                {
+                    var (x, y, dir) = bfsQueue.Dequeue();
+                    Debug.Assert(bfsNodes[x, y, dir].Generation == generation, "oops");
+
+                    if (map[x, y] == Map.Cell.ManipulatorExtension && !state.IsPickedUp(x, y))
+                    {
+                        FindBackwardPath(x, y, dir);
+                        return bfsPath;
+                    }
+
+                    for (var i = 0; i < Move.All.Length; ++i)
+                    {
+                        var move = Move.All[i];
+                        var nx = x + move.Dx;
+                        var ny = y + move.Dy;
+                        if (map.IsFree(nx, ny) && bfsNodes[nx, ny, dir].Generation != generation)
+                        {
+                            bfsNodes[nx, ny, dir] = new BfsNode(generation, i, 0);
+                            bfsQueue.Enqueue((nx, ny, dir));
+                        }
+                    }
+                }
+
+                throw new InvalidOperationException();
             }
 
             void Bfs(DistsFromCenter distsFromCenter)
@@ -361,54 +447,6 @@
                 (0 * Math.Abs(this.State.X - startX)) +
                 (0 * Math.Abs(this.State.Y - startY)) +
                 ((0.01f * this.State.Hash) / int.MaxValue);
-        }
-    }
-
-    public class LookAheadSymmetricNoRecalc : LookAheadStrategyBase
-    {
-        public LookAheadSymmetricNoRecalc()
-            : base(true, 1, 1)
-        {
-        }
-    }
-
-    public class LookAheadGrowLeftNoRecalc : LookAheadStrategyBase
-    {
-        public LookAheadGrowLeftNoRecalc()
-            : base(false, 1, 1)
-        {
-        }
-    }
-
-    public class LookAheadGrowRightNoRecalc : LookAheadStrategyBase
-    {
-        public LookAheadGrowRightNoRecalc()
-            : base(false, -1, 1)
-        {
-        }
-    }
-
-    public class LookAheadSymmetricRecalc10 : LookAheadStrategyBase
-    {
-        public LookAheadSymmetricRecalc10()
-            : base(true, 1, 10)
-        {
-        }
-    }
-
-    public class LookAheadGrowLeftRecalc10 : LookAheadStrategyBase
-    {
-        public LookAheadGrowLeftRecalc10()
-            : base(false, 1, 10)
-        {
-        }
-    }
-
-    public class LookAheadGrowRightRecalc10 : LookAheadStrategyBase
-    {
-        public LookAheadGrowRightRecalc10()
-            : base(false, -1, 10)
-        {
         }
     }
 }

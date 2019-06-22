@@ -17,11 +17,15 @@
             var baseDir = args.Length > 0 ? args[0] : FindSolutionDir();
             Directory.SetCurrentDirectory(baseDir);
 
+            /*
             var strategies =
                 typeof(DumbBfs).Assembly.DefinedTypes
                     .Where(type => type.IsClass && !type.IsAbstract && typeof(IStrategy).IsAssignableFrom(type))
                     .Select(type => (IStrategy)Activator.CreateInstance(type))
                     .ToArray();
+            */
+
+            var strategies = LookAheadFactory.MakeStrategies().Concat(new[] { new DumbBfs(), }).ToArray();
 
             var totalTimeUnits = 0;
             var haveFailures = false;

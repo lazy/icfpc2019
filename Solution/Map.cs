@@ -17,6 +17,8 @@
             this.cellsToVisit = new HashSet<(int, int)>();
             this.FindCellsToVisit();
 
+            var numManipulatorExtensions = 0;
+
             // Mark all inaccessible free cells as edge
             for (var x = 0; x < this.Width; ++x)
             {
@@ -26,10 +28,16 @@
                     {
                         this.cells[x, y] = Cell.Edge;
                     }
+
+                    if (this[x, y] == Cell.ManipulatorExtension)
+                    {
+                        ++numManipulatorExtensions;
+                    }
                 }
             }
 
             this.DistsFromCenter = new DistsFromCenter(new State(this));
+            this.NumManipulatorExtensions = numManipulatorExtensions;
         }
 
         public enum Cell
@@ -53,6 +61,8 @@
         public int StartY { get; }
 
         public DistsFromCenter DistsFromCenter { get; }
+
+        public int NumManipulatorExtensions { get; }
 
         public int Width => this.cells.GetLength(0);
 
