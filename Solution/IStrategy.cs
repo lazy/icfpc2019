@@ -6,6 +6,6 @@
     {
         string Name => this.GetType().Name;
 
-        Command[][] Solve(Map map);
+        Command[][] Solve(State state);
     }
 }

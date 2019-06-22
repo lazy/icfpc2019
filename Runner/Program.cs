@@ -44,11 +44,13 @@
                     log.Add($"Processing {mapName}");
                     var map = MapParser.Parse(File.ReadAllText(mapFile));
 
+                    /*
                     // temporary for clonning debugging
                     if (map.NumCloneBoosts == 0 || map.NumSpawnPoints == 0)
                     {
                         return;
                     }
+                    */
 
                     var extSolutionPath = $"Data/extended-solutions/{mapName}.ext-sol";
 
@@ -75,11 +77,13 @@
                             continue;
                         }
 
+                        /*
                         // temporary for clonning debugging
                         if (strategy.Name != oldBestStrategyName)
                         {
                             continue;
                         }
+                        */
 
                         var solution = Emulator.MakeExtendedSolution(map, strategy);
                         solution.SaveIfBetter(extSolutionPath);

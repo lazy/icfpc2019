@@ -120,11 +120,13 @@
             this.removeTurns ? "RT" : "KT",
             this.numVisCoeff);
 
-        public Command[][] Solve(Map map) =>
-            new[] { this.Solve1(map).ToArray() };
+        public Command[][] Solve(State state) =>
+            new[] { this.Solve1(state).ToArray() };
 
-        public IEnumerable<Command> Solve1(Map map)
+        public IEnumerable<Command> Solve1(State state)
         {
+            var map = state.Map;
+
             // No point in running if there's another strategy that will collect everything
             if (LookAheadFactory.PrevSize(this.forcedManipulatorExtensionsCount) >= map.NumManipulatorExtensions)
             {
@@ -133,7 +135,6 @@
 
             var forcedExtensionsLeft = Math.Min(map.NumManipulatorExtensions, this.forcedManipulatorExtensionsCount);
 
-            var state = new State(map);
             var generation = 0;
 
             // reuse to reduce memory consumption

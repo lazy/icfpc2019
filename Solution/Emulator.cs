@@ -8,7 +8,7 @@
     public static class Emulator
     {
         public static ExtendedSolution MakeExtendedSolution(Map map, IStrategy strategy) =>
-            MakeExtendedSolution(map, strategy.Name, strategy.Solve(map));
+            MakeExtendedSolution(map, strategy.Name, strategy.Solve(new State(map)));
 
         public static ExtendedSolution MakeExtendedSolution(Map map, string strategyName, Command[][] moves)
         {

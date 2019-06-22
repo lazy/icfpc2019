@@ -22,8 +22,8 @@
             Move.Down,
         };
 
-        public Command[][] Solve(Map map) =>
-            new[] { this.Solve1(map).ToArray() };
+        public Command[][] Solve(State state) =>
+            new[] { this.Solve1(state.Map).ToArray() };
 
         public IEnumerable<Command> Solve1(Map map)
         {
