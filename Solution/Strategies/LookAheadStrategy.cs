@@ -25,7 +25,7 @@
 
                         foreach (var forcedManipulatorExtensionsCount in forcedManipulatorExtensionsCount)
                         {
-                            foreach (var extraDepth in new[] { 0, 5, 10 })
+                            foreach (var extraDepth in new[] { 1, 2, 3, 4, 5, })
                             {
                                 yield return new LookAheadStrategy(
                                     sym, growthSign, recalcsTime, forcedManipulatorExtensionsCount, extraDepth);
@@ -356,22 +356,23 @@
                             throw new InvalidOperationException();
                         }
 
-                        var (destX, destY, destDir, destIsExtensionBooster, distFromCenter) = bestDest.Value;
+                        var (destX, destY, destDir, destIsExtensionBooster, bestDistFromCenter) = bestDest.Value;
                         FindBackwardPath(destX, destY, destDir);
                         return;
                     }
 
                     // path found, but search a bit more for deeper fruits
                     var isExtensionBooster = map[x, y] == Map.Cell.ManipulatorExtension && !state.IsPickedUp(x, y);
-                    if (state.UnwrappedVisible(x, y, dir, distsFromCenter) || isExtensionBooster)
+                    var distFromCenter = state.MaxUnwrappedVisibleDistFromCenter(x, y, dir, distsFromCenter);
+                    if (distFromCenter > 0 || isExtensionBooster)
                     {
                         if (maxDepth == null)
                         {
                             maxDepth = depth + this.bfsExtraDepth;
                         }
 
-                        var distFromCenter = state.MaxUnwrappedVisibleDistFromCenter(x, y, dir, distsFromCenter);
-                        if (bestDest == null || Quality(isExtensionBooster, distFromCenter) > Quality(bestDest.Value.isExtensionBooster, bestDest.Value.distFromCenter))
+                        if (bestDest == null ||
+                            Quality(isExtensionBooster, distFromCenter) > Quality(bestDest.Value.isExtensionBooster, bestDest.Value.distFromCenter))
                         {
                             bestDest = (x, y, dir, isExtensionBooster, distFromCenter);
                         }
@@ -401,12 +402,12 @@
                     }
                 }
 
-                var (finalX, finalY, finalDir, _1, _2) =
+                var (finalX, finalY, finalDir, p1, p2) =
                     bestDest ?? throw new InvalidOperationException("Couldn't find any path with BFS!");
                 FindBackwardPath(finalX, finalY, finalDir);
 
-                int Quality(bool isBooster, int distFromCenter) =>
-                    (isBooster ? 1000 : 0) + distFromCenter;
+                int Quality(bool isBooster, int distFromCenter1) =>
+                    (isBooster ? 1000 : 0) + distFromCenter1;
             }
 
             void FindBackwardPath(int x, int y, int dir)
