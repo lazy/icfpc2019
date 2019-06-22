@@ -38,6 +38,8 @@
         public static Turn Left { get; } = new Turn(1, "Q");
         public static Turn Right { get; } = new Turn(3, "E");
 
+        public static Turn[] All { get; } = new[] { Left, Right };
+
         public int Ddir { get; }
         public string Repr { get; }
 

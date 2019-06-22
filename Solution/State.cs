@@ -94,9 +94,27 @@
 
         public int X => this.x;
         public int Y => this.y;
+        public int Dir => this.dir;
         public int WrappedCellsCount => this.wrappedCellsCount;
 
         public bool IsWrapped(int x, int y) => this.wrappedCells.TryFind((x, y), out var _);
+
+        public bool UnwrappedVisible(int x, int y, int dir)
+        {
+            foreach (var delta in this.manipConfig)
+            {
+                var (dx, dy) = TurnManip(dir, delta);
+
+                // TODO: check visibility
+                var manipCoord = (x + dx, y + dy);
+                if (this.map.IsFree(x + dx, y + dy) && !this.wrappedCells.TryFind(manipCoord, out var _))
+                {
+                    return true;
+                }
+            }
+
+            return false;
+        }
 
         public State? Next(Command command)
         {
