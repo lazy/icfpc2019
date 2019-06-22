@@ -105,6 +105,68 @@
             return cell != Cell.Edge && cell != Cell.Obstacle;
         }
 
+        public bool AreVisible(int x1, int y1, int x2, int y2)
+        {
+            if (!this.IsFree(x1, y1) || !this.IsFree(x2, y2))
+            {
+                return false;
+            }
+
+            // Blatantly stolen from https://sinepost.wordpress.com/2012/05/24/drawing-in-a-straight-line/
+            Func<int, int, bool, bool> isFree = (major, minor, horizontal) =>
+            {
+                if (horizontal)
+                {
+                    return this.IsFree(major, minor);
+                }
+
+                return this.IsFree(minor, major);
+            };
+
+            Func<int, int, int, double, bool, bool> check = (start, end, startMinor, slope, horizontal) =>
+            {
+                int advance = end > start ? 1 : -1;
+                double curMinor = startMinor + 0.5 + (0.5 * advance * slope);
+                for (int curMajor = start + advance; curMajor != end; curMajor += advance)
+                {
+                    var curMinorFloor = Math.Floor(curMinor);
+                    if (!isFree(curMajor, (int)curMinorFloor, horizontal) && Math.Abs(curMinor - curMinorFloor) >= 1e-6)
+                    {
+                        return false;
+                    }
+
+                    double newMinor = curMinor + (advance * slope);
+                    var newMinorFloor = Math.Floor(newMinor);
+                    if (newMinorFloor != curMinorFloor && Math.Abs(newMinor - newMinorFloor) >= 1e-6)
+                    {
+                        if (!isFree(curMajor, (int)newMinorFloor, horizontal))
+                        {
+                            return false;
+                        }
+                    }
+
+                    curMinor = newMinor;
+                }
+
+                return true;
+            };
+
+            var (dx, dy) = (x2 - x1, y2 - y1);
+            var (absDx, absDy) = (Math.Abs(dx), Math.Abs(dy));
+
+            if (absDx <= 1 && absDy <= 1)
+            {
+                return true;
+            }
+
+            if (absDx >= absDy)
+            {
+                return check(x1, x2, y1, (double)dy / dx, true);
+            }
+
+            return check(y1, y2, x1, (double)dx / dy, false);
+        }
+
         public override string ToString()
         {
             var rows = new List<string>();
