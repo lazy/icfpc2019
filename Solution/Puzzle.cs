@@ -2,26 +2,28 @@ namespace Icfpc2019.Solution
 {
     using System;
     using System.Collections.Generic;
+    using System.Diagnostics;
     using System.Drawing;
     using System.Linq;
 
     public class Puzzle
     {
         private const int RectDim = 5;
+
+        private static int[] dx = { 0, 1, 0, -1 };
+        private static int[] dy = { 1, 0, -1, 0 };
         private readonly AllPoints allPoints = new AllPoints();
+        private readonly HashSet<Point> contourPoints = new HashSet<Point>();
         private readonly HashSet<Point> insidePoints = new HashSet<Point>();
         private readonly HashSet<Point> outsidePoints = new HashSet<Point>();
-        private readonly HashSet<Point> contourPoints = new HashSet<Point>();
-        private int bNum;
-        private int eNum;
-        private int tSize;
-        private int vMin;
-        private int vMax;
-        private int mNum;
-        private int fNum;
-        private int dNum;
-        private int rNum;
         private int cNum;
+        private int dNum;
+        private int fNum;
+        private int mNum;
+        private int rNum;
+        private int tSize;
+        private int vMax;
+        private int vMin;
         private int xNum;
 
         public Puzzle(string description)
@@ -30,8 +32,6 @@ namespace Icfpc2019.Solution
 
             var hyperParams = tokens[0].Split(',');
 
-            this.bNum = int.Parse(hyperParams[0]);
-            this.eNum = int.Parse(hyperParams[1]);
             this.tSize = int.Parse(hyperParams[2]);
             this.vMin = int.Parse(hyperParams[3]);
             this.vMax = int.Parse(hyperParams[4]);
@@ -54,10 +54,6 @@ namespace Icfpc2019.Solution
             }
 
             var outPts = new List<Point>(this.outsidePoints);
-            var dx = new[] { 0, 1, 0, -1 };
-            var dy = new[] { 1, 0, -1, 0 };
-
-            bool GoodXy(int x, int y) => x >= 0 && x <= this.tSize && y >= 0 && y <= this.tSize;
 
             foreach (var currentPoint in outPts)
             {
@@ -71,7 +67,7 @@ namespace Icfpc2019.Solution
                 while (queue.Count > 0)
                 {
                     var cur = queue.Dequeue();
-                    if (!GoodXy(cur.X, cur.Y))
+                    if (!this.GoodXy(cur.X, cur.Y))
                     {
                         while (prev.ContainsKey(cur))
                         {
@@ -95,6 +91,67 @@ namespace Icfpc2019.Solution
                 }
             }
 
+            this.CollectContourPoints();
+            Trace.Assert(this.contourPoints.Count <= this.vMax);
+        }
+
+        public Bitmap SaveToBitmap()
+        {
+            var totalWidth = Math.Max(this.allPoints.MaxX, this.tSize) + 1;
+            var totalHeight = Math.Max(this.allPoints.MaxY, this.tSize) + 1;
+            var bmp = new Bitmap(RectDim * totalWidth, RectDim * totalHeight);
+            using (var g = Graphics.FromImage(bmp))
+            {
+                g.ScaleTransform(1.0f, -1.0f);
+                g.TranslateTransform(0.0f, -totalHeight * RectDim);
+
+                void DrawRect(Brush b, int x, int y)
+                {
+                    g.FillRectangle(b, x * RectDim, y * RectDim, RectDim, RectDim);
+                }
+
+                for (var x = 0; x < totalWidth; ++x)
+                {
+                    for (var y = 0; y < totalHeight; ++y)
+                    {
+                        DrawRect(Brushes.Bisque, x, y);
+                    }
+                }
+
+                foreach (var p in this.insidePoints)
+                {
+                    DrawRect(Brushes.White, p.X, p.Y);
+                }
+
+                foreach (var p in this.outsidePoints)
+                {
+                    DrawRect(Brushes.Black, p.X, p.Y);
+                }
+
+                foreach (var p in this.contourPoints)
+                {
+                    const int pDelta = 1;
+                    g.FillEllipse(Brushes.Red, (p.X * RectDim) - pDelta, (p.Y * RectDim) - pDelta, 2 * pDelta, 2 * pDelta);
+                }
+            }
+
+            return bmp;
+        }
+
+        public string SaveToMap()
+        {
+            var contourPointsStr = string.Join(',', this.contourPoints.Select(x => $"({x.X},{x.Y})"));
+            return $"{contourPointsStr}#(10,10)##";
+        }
+
+        private static Point CorrectPoint(Point p)
+        {
+            return new Point { X = p.X - 1, Y = p.Y - 1 };
+        }
+
+        private void CollectContourPoints()
+        {
+            this.contourPoints.Clear();
             var dir = 1;
             var startPoint = new Point { X = 0, Y = 0 };
             this.contourPoints.Add(startPoint);
@@ -105,13 +162,13 @@ namespace Icfpc2019.Solution
                 var nextX = curContour.X + dx[dir];
                 var nextY = curContour.Y + dy[dir];
                 var nextContour = new Point { X = nextX, Y = nextY };
-                if (GoodXy(nextX, nextY) && !this.outsidePoints.Contains(nextContour))
+                if (this.GoodXy(nextX, nextY) && !this.outsidePoints.Contains(nextContour))
                 {
                     var turnRightDir = (dir + 1) % 4;
                     var rightX = nextContour.X + dx[turnRightDir];
                     var rightY = nextContour.Y + dy[turnRightDir];
                     var rightContour = new Point { X = rightX, Y = rightY };
-                    if (GoodXy(rightX, rightY) && !this.outsidePoints.Contains(rightContour))
+                    if (this.GoodXy(rightX, rightY) && !this.outsidePoints.Contains(rightContour))
                     {
                         AddContourPointForDir(dir, curContour.X, curContour.Y);
                         curContour = rightContour;
@@ -164,52 +221,6 @@ namespace Icfpc2019.Solution
             }
         }
 
-        public Bitmap SaveToBitmap()
-        {
-            var totalWidth = Math.Max(this.allPoints.MaxX, this.tSize) + 1;
-            var totalHeight = Math.Max(this.allPoints.MaxY, this.tSize) + 1;
-            var bmp = new Bitmap(RectDim * totalWidth, RectDim * totalHeight);
-            using (var g = Graphics.FromImage(bmp))
-            {
-                g.ScaleTransform(1.0f, -1.0f);
-                g.TranslateTransform(0.0f, -totalHeight * RectDim);
-
-                void DrawRect(Brush b, int x, int y)
-                {
-                    g.FillRectangle(b, x * RectDim, y * RectDim, RectDim, RectDim);
-                }
-
-                for (var x = 0; x < totalWidth; ++x)
-                {
-                    for (var y = 0; y < totalHeight; ++y)
-                    {
-                        DrawRect(Brushes.Bisque, x, y);
-                    }
-                }
-
-                foreach (var p in this.insidePoints)
-                {
-                    DrawRect(Brushes.White, p.X, p.Y);
-                }
-
-                foreach (var p in this.outsidePoints)
-                {
-                    DrawRect(Brushes.Black, p.X, p.Y);
-                }
-
-                foreach (var p in this.contourPoints)
-                {
-                    const int pDelta = 1;
-                    g.FillEllipse(Brushes.Red, (p.X * RectDim) - pDelta, (p.Y * RectDim) - pDelta, 2 * pDelta, 2 * pDelta);
-                }
-            }
-
-            return bmp;
-        }
-
-        private static Point CorrectPoint(Point p)
-        {
-            return new Point { X = p.X - 1, Y = p.Y - 1 };
-        }
+        private bool GoodXy(int x, int y) => x >= 0 && x < this.tSize && y >= 0 && y < this.tSize;
     }
 }

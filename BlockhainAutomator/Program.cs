@@ -10,6 +10,7 @@
         {
             var puzzleFile = args[0];
             var puzzle = new Puzzle(File.ReadAllText(puzzleFile));
+            File.WriteAllText($"{puzzleFile}.desc", puzzle.SaveToMap());
             puzzle.SaveToBitmap().Save($"{puzzleFile}.png");
         }
     }
