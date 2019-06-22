@@ -95,27 +95,37 @@ namespace Icfpc2019.Solution
                 }
             }
 
-            var startPoint = new Point { X = 0, Y = 0 };
-            var curContour = startPoint;
             var dir = 1;
+            var startPoint = new Point { X = 0, Y = 0 };
+            this.contourPoints.Add(startPoint);
+            var curContour = startPoint;
+
             while (true)
             {
-                this.contourPoints.Add(curContour);
-                var chosenDir = (dir + 1) % 4;
-
-                for (var inc = 0; inc < 4; ++inc)
+                var nextX = curContour.X + dx[dir];
+                var nextY = curContour.Y + dy[dir];
+                var nextContour = new Point { X = nextX, Y = nextY };
+                if (GoodXy(nextX, nextY) && !this.outsidePoints.Contains(nextContour))
                 {
-                    var nextX = curContour.X + dx[chosenDir];
-                    var nextY = curContour.Y + dy[chosenDir];
-                    var nextContour = new Point { X = nextX, Y = nextY };
-                    if (GoodXy(nextX, nextY) && !this.outsidePoints.Contains(nextContour))
+                    var turnRightDir = (dir + 1) % 4;
+                    var rightX = nextContour.X + dx[turnRightDir];
+                    var rightY = nextContour.Y + dy[turnRightDir];
+                    var rightContour = new Point { X = rightX, Y = rightY };
+                    if (GoodXy(rightX, rightY) && !this.outsidePoints.Contains(rightContour))
+                    {
+                        AddContourPointForDir(dir, curContour.X, curContour.Y);
+                        curContour = rightContour;
+                        dir = turnRightDir;
+                    }
+                    else
                     {
                         curContour = nextContour;
-                        dir = chosenDir;
-                        break;
                     }
-
-                    chosenDir = (chosenDir + 3) % 4;
+                }
+                else
+                {
+                    AddContourPointForDir(dir, curContour.X, curContour.Y);
+                    dir = (dir + 3) % 4;
                 }
 
                 if (curContour == startPoint)
@@ -124,9 +134,34 @@ namespace Icfpc2019.Solution
                 }
             }
 
-            var vCount = (this.tSize * this.tSize) - this.outsidePoints.Count;
+            void AddContourPointForDir(int d, int fromX, int fromY)
+            {
+                int x;
+                int y;
+                switch (d)
+                {
+                    case 0:
+                        x = 1;
+                        y = 1;
+                        break;
+                    case 1:
+                        x = 1;
+                        y = 0;
+                        break;
+                    case 2:
+                        x = 0;
+                        y = 0;
+                        break;
+                    case 3:
+                        x = 0;
+                        y = 1;
+                        break;
+                    default:
+                        throw new Exception($"Unexpected direction {d}");
+                }
 
-            Console.WriteLine($"vCount = {vCount}, vMax = {this.vMax}, vMin = {this.vMin}");
+                this.contourPoints.Add(new Point { X = fromX + x, Y = fromY + y });
+            }
         }
 
         public Bitmap SaveToBitmap()
@@ -164,7 +199,8 @@ namespace Icfpc2019.Solution
 
                 foreach (var p in this.contourPoints)
                 {
-                    DrawRect(Brushes.Red, p.X, p.Y);
+                    const int pDelta = 1;
+                    g.FillEllipse(Brushes.Red, (p.X * RectDim) - pDelta, (p.Y * RectDim) - pDelta, 2 * pDelta, 2 * pDelta);
                 }
             }
 
