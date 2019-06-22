@@ -8,6 +8,7 @@
 
   <ItemGroup>
     <PackageReference Include="ImTools.dll" Version="1.0.0" />
+    <PackageReference Include="OptimizedPriorityQueue" Version="4.2.0" />
   </ItemGroup>
 
 </Project>

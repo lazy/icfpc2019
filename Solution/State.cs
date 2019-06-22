@@ -31,6 +31,7 @@
         private readonly int drillsCount;
         private readonly int mysteriousPointsCount;
         private readonly int teleportsCount;
+        private readonly int cloneCount;
 
         private readonly int remainingSpeedBoostedMoves;
         private readonly int remainingDrillMoves;
@@ -50,6 +51,7 @@
                 drillsCount: 0,
                 mysteriousPointsCount: 0,
                 teleportsCount: 0,
+                cloneCount: 0,
                 remainingDrillMoves: 0,
                 remainingSpeedBoostedMoves: 0)
         {
@@ -69,6 +71,7 @@
             int drillsCount,
             int mysteriousPointsCount,
             int teleportsCount,
+            int cloneCount,
             int remainingSpeedBoostedMoves,
             int remainingDrillMoves)
         {
@@ -86,13 +89,36 @@
             this.drillsCount = drillsCount;
             this.mysteriousPointsCount = mysteriousPointsCount;
             this.teleportsCount = teleportsCount;
+            this.cloneCount = cloneCount;
             this.remainingSpeedBoostedMoves = remainingSpeedBoostedMoves;
             this.remainingDrillMoves = remainingDrillMoves;
 
             // Debug.Assert(this.wrappedCellsCount == this.wrappedCells.Enumerate().Count(), "Counts do not match!");
         }
 
+        public int X => this.x;
+        public int Y => this.y;
+        public int Dir => this.dir;
         public int WrappedCellsCount => this.wrappedCellsCount;
+
+        public bool IsWrapped(int x, int y) => this.wrappedCells.TryFind((x, y), out var _);
+
+        public bool UnwrappedVisible(int x, int y, int dir)
+        {
+            foreach (var delta in this.manipConfig)
+            {
+                var (dx, dy) = TurnManip(dir, delta);
+
+                // TODO: check visibility
+                var manipCoord = (x + dx, y + dy);
+                if (this.map.IsFree(x + dx, y + dy) && !this.wrappedCells.TryFind(manipCoord, out var _))
+                {
+                    return true;
+                }
+            }
+
+            return false;
+        }
 
         public State? Next(Command command)
         {
@@ -121,6 +147,8 @@
                     return this.drillsCount <= 0
                         ? null
                         : this.With(drillsCount: this.drillsCount - 1, remainingDrillMoves: 30);
+                case Clone clone:
+                    throw new NotImplementedException();
                 default:
                     throw new ArgumentOutOfRangeException(nameof(command), command.ToString());
             }
@@ -179,6 +207,7 @@
             int? drillsCount = null,
             int? mysteriousPointsCount = null,
             int? teleportsCount = null,
+            int? cloneCount = null,
             int? remainingSpeedBoostedMoves = null,
             int? remainingDrillMoves = null,
             int timeCost = 1)
@@ -206,6 +235,7 @@
                 drillsCount ?? this.drillsCount,
                 mysteriousPointsCount ?? this.mysteriousPointsCount,
                 teleportsCount ?? this.teleportsCount,
+                cloneCount ?? this.cloneCount,
                 remainingSpeedBoostedMoves ?? (this.remainingSpeedBoostedMoves - timeCost),
                 remainingDrillMoves ?? (this.remainingDrillMoves - timeCost));
         }
@@ -247,6 +277,9 @@
                 case Map.Cell.Teleport:
                     var teleCnt = CountBooster(this.teleportsCount);
                     return this.With(x: newX, y: newY, pickedUpBoosterCoords: teleCnt.PickedUp, teleportsCount: teleCnt.Counter, timeCost: timeCost);
+                case Map.Cell.Clone:
+                    var cloneCnt = CountBooster(this.cloneCount);
+                    return this.With(x: newX, y: newY, pickedUpBoosterCoords: cloneCnt.PickedUp, cloneCount: cloneCnt.Counter, timeCost: timeCost);
                 case Map.Cell.Edge:
                 default:
                     throw new InvalidOperationException($"Unexpected cell: {this.map[newX, newY]}");
