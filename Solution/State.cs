@@ -203,7 +203,7 @@
                         ref newWrappedCellsCount),
                     UseFastWheels useFastWheels => bot.UseFastWheels(ref newFastWheelsCount),
                     UseDrill useDrill => bot.UseDrill(ref newDrillsCount),
-                    Clone clone => throw new NotImplementedException(),
+                    Clone clone => bot.Clone(this, ref newBots, ref newCloneCount, ref newWrappedCells, ref newWrappedCellsCount),
                     _ => throw new ArgumentOutOfRangeException(nameof(command), command.ToString()),
                     };
 
@@ -489,6 +489,37 @@
                 --newDrillsCount < 0
                     ? null
                     : this.With(remainingDrillMoves: 31);
+
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            public Bot? Clone(
+                State state,
+                ref Bot[] newBots,
+                ref int newCloneCount,
+                ref ImHashSet newWrappedCells,
+                ref int newWrappedCellsCount)
+            {
+                if (--newCloneCount < 0 || state.Map[this.X, this.Y] != Map.Cell.SpawnPoint)
+                {
+                    return null;
+                }
+
+                var newerBots = new Bot[newBots.Length + 1];
+                Array.Copy(newBots, newerBots, newBots.Length);
+
+                newerBots[newBots.Length] = new Bot(this.X, this.Y, 0, InitManipConfig, 0, 0);
+                newBots = newerBots;
+
+                (newWrappedCells, newWrappedCellsCount) = UpdateWrappedCells(
+                    state.Map,
+                    this.X,
+                    this.Y,
+                    0,
+                    InitManipConfig,
+                    newWrappedCells,
+                    newWrappedCellsCount);
+
+                return this;
+            }
 
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
             private void CountBooster(ref ImHashSet newPickedUpBoosterCoords, ref int counter)
