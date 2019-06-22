@@ -3,11 +3,25 @@
     using System;
     using System.Collections.Generic;
     using System.Diagnostics;
+    using System.Linq;
+
+    using Priority_Queue;
 
     public class LookAheadStrategy : IStrategy
     {
         private const int BeamSize = 64;
         private const int BeamSearchDepth = 10;
+
+        private static readonly Command[] BeamSearchCommands =
+        {
+            Move.Up,
+            Move.Down,
+            Move.Left,
+            Move.Right,
+            Turn.Left,
+            Turn.Right,
+            UseFastWheels.Instance,
+        };
 
         public IEnumerable<Command> Solve(Map map)
         {
@@ -59,7 +73,65 @@
 
             Command? TryBeamSearch()
             {
-                return null;
+                var curWrappedCount = state.WrappedCellsCount;
+                var beam = new FastPriorityQueue<WeightedState>(BeamSize + 1);
+
+                beam.Enqueue(new WeightedState(state, null), state.WrappedCellsCount);
+
+                var bestState = (WeightedState?)null;
+
+                for (var depth = 0; depth < BeamSearchDepth; ++depth)
+                {
+                    var prevBeam = beam.ToArray();
+                    beam.Clear();
+
+                    foreach (var prevState in prevBeam)
+                    {
+                        foreach (var command in BeamSearchCommands)
+                        {
+                            var nextState = prevState.State.Next(command);
+                            if (nextState != null)
+                            {
+                                if (beam.Count < BeamSize ||
+                                    nextState.WrappedCellsCount > beam.First.State.WrappedCellsCount)
+                                {
+                                    var nextWeightedState = new WeightedState(nextState, (prevState, command));
+                                    beam.Enqueue(nextWeightedState, nextState.WrappedCellsCount);
+
+                                    // remove worst states
+                                    if (beam.Count > BeamSize)
+                                    {
+                                        beam.Dequeue();
+                                    }
+
+                                    // update the global best state if possible
+                                    if (nextState.WrappedCellsCount > curWrappedCount &&
+                                        (bestState == null || nextState.WrappedCellsCount > bestState.State.WrappedCellsCount))
+                                    {
+                                        bestState = nextWeightedState;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+
+                if (bestState == null)
+                {
+                    return null;
+                }
+
+                // Scroll back until first command is found
+                var firstCommand = (Command?)null;
+                var cur = bestState;
+                while (cur.Prev != null)
+                {
+                    var (prev, command) = cur.Prev.Value;
+                    firstCommand = command;
+                    cur = prev;
+                }
+
+                return firstCommand;
             }
 
             void Bfs()
@@ -162,6 +234,18 @@
 
             public int Generation { get; }
             public int MoveIdx { get; }
+        }
+
+        private class WeightedState : FastPriorityQueueNode
+        {
+            public WeightedState(State state, (WeightedState, Command)? prev)
+            {
+                this.State = state;
+                this.Prev = prev;
+            }
+
+            public State State { get; }
+            public (WeightedState state, Command command)? Prev { get; }
         }
     }
 }
