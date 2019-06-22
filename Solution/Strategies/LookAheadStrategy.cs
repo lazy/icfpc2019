@@ -27,9 +27,9 @@
                         {
                             foreach (var extraDepth in new[] { 1, 2, 3, 4, 5, })
                             {
-                                foreach (var removeTurns in new[] { true /*, false */ })
+                                foreach (var removeTurns in new[] { true, false })
                                 {
-                                    foreach (var numVisCoeff in new[] { /* 0, */ 1 })
+                                    foreach (var numVisCoeff in new[] { 0, 1 })
                                     {
                                         yield return new LookAheadStrategy(
                                             sym,

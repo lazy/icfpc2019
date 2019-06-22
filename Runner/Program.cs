@@ -33,7 +33,7 @@
             var outputLock = new object();
 
             Parallel.ForEach(
-                Directory.EnumerateFiles("Data/maps", "*.desc"),
+                Directory.EnumerateFiles("Data/maps", "*.desc").Reverse(),
                 new ParallelOptions { MaxDegreeOfParallelism = -1 },
                 mapFile =>
                 {
