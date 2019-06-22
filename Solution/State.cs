@@ -104,10 +104,6 @@
 
         public Map Map => this.map;
         public int BotsCount => this.bots.Length;
-        public int X => this.bots[0].X;
-        public int Y => this.bots[0].Y;
-        public int Dir => this.bots[0].Dir;
-        public (int, int)[] ManipConfig => this.bots[0].ManipConfig;
         public int Hash => 0;
         public int ManipulatorExtensionCount => this.manipulatorExtensionCount;
         public int WrappedCellsCount => this.wrappedCellsCount;
@@ -125,6 +121,8 @@
                 };
         }
 
+        public Bot GetBot(int i) => this.bots[i];
+
         public bool IsWrapped(int x, int y) => this.wrappedCells.TryFind((x, y), out var _);
 
         public bool IsPickedUp(int x, int y) => this.pickedUpBoosterCoords.TryFind((x, y), out var _);
@@ -134,9 +132,10 @@
 
         public (int numVis, int maxDist) MaxUnwrappedVisibleDistFromCenter(int x, int y, int dir, DistsFromCenter dists)
         {
+            // FIXME: we consider only one bot
             var sumVis = 0;
             var max = 0;
-            foreach (var delta in this.ManipConfig)
+            foreach (var delta in this.bots[0].ManipConfig)
             {
                 var (dx, dy) = TurnManip(dir, delta);
 

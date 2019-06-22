@@ -223,16 +223,17 @@
 
             Command ExtendManipulator()
             {
+                var bot = state.GetBot(0);
                 if (this.symmetricGrowth)
                 {
-                    var extensionDist = state.ManipConfig.Length / 2;
-                    var sign = this.initSignGrowth * (state.ManipConfig.Length % 2 == 0 ? 1 : -1);
-                    var (dx, dy) = State.TurnManip(state.Dir, (1, extensionDist * sign));
+                    var extensionDist = bot.ManipConfig.Length / 2;
+                    var sign = this.initSignGrowth * (bot.ManipConfig.Length % 2 == 0 ? 1 : -1);
+                    var (dx, dy) = State.TurnManip(bot.Dir, (1, extensionDist * sign));
                     return new UseManipulatorExtension(dx, dy);
                 }
                 else
                 {
-                    var extensionDist = state.ManipConfig.Length - 2;
+                    var extensionDist = bot.ManipConfig.Length - 2;
                     var sign = this.initSignGrowth;
                     if (extensionDist > 4)
                     {
@@ -240,7 +241,7 @@
                         sign *= -1;
                     }
 
-                    var (dx, dy) = State.TurnManip(state.Dir, (1, extensionDist * sign));
+                    var (dx, dy) = State.TurnManip(bot.Dir, (1, extensionDist * sign));
                     return new UseManipulatorExtension(dx, dy);
                 }
             }
@@ -249,12 +250,13 @@
 
             Command? TryBeamSearchImpl()
             {
+                var bot = state.GetBot(0);
                 var curWrappedCount = state.WrappedCellsCount;
                 var beam = new StablePriorityQueue<WeightedState>(BeamSize + 1);
                 var seenStates = new HashSet<int>();
 
                 var startState = new WeightedState(state, null, distsFromCenter);
-                beam.Enqueue(startState, startState.CalcPriority(state.X, state.Y));
+                beam.Enqueue(startState, startState.CalcPriority(bot.X, bot.Y));
 
                 var bestState = (WeightedState?)null;
 
@@ -283,7 +285,7 @@
                                     nextState.WrappedCellsCount > beam.First.State.WrappedCellsCount)
                                 {
                                     var nextWeightedState = new WeightedState(nextState, (prevState, command), distsFromCenter);
-                                    beam.Enqueue(nextWeightedState, nextWeightedState.CalcPriority(state.X, state.Y));
+                                    beam.Enqueue(nextWeightedState, nextWeightedState.CalcPriority(bot.X, bot.Y));
 
                                     // remove worst states
                                     if (beam.Count > BeamSize)
@@ -293,7 +295,7 @@
 
                                     // update the global best state if possible
                                     if (nextState.WrappedCellsCount >= curWrappedCount &&
-                                        (bestState == null || nextWeightedState.CalcPriority(state.X, state.Y) > bestState.CalcPriority(state.X, state.Y)))
+                                        (bestState == null || nextWeightedState.CalcPriority(bot.X, bot.Y) > bestState.CalcPriority(bot.X, bot.Y)))
                                     {
                                         bestState = nextWeightedState;
                                     }
@@ -324,10 +326,12 @@
 
             IEnumerable<Command> FindManipulatorExtension()
             {
+                var bot = state.GetBot(0);
+
                 ++generation;
                 bfsQueue.Clear();
-                bfsQueue.Enqueue((state.X, state.Y, state.Dir));
-                bfsNodes[state.X, state.Y, state.Dir] = new BfsNode(generation, -1, 0);
+                bfsQueue.Enqueue((bot.X, bot.Y, bot.Dir));
+                bfsNodes[bot.X, bot.Y, bot.Dir] = new BfsNode(generation, -1, 0);
                 while (bfsQueue.Count > 0)
                 {
                     var (x, y, dir) = bfsQueue.Dequeue();
@@ -357,10 +361,12 @@
 
             void Bfs(DistsFromCenter distsFromCenter)
             {
+                var bot = state.GetBot(0);
+
                 ++generation;
                 bfsQueue.Clear();
-                bfsQueue.Enqueue((state.X, state.Y, state.Dir));
-                bfsNodes[state.X, state.Y, state.Dir] = new BfsNode(generation, -1, 0);
+                bfsQueue.Enqueue((bot.X, bot.Y, bot.Dir));
+                bfsNodes[bot.X, bot.Y, bot.Dir] = new BfsNode(generation, -1, 0);
 
                 int? maxDepth = null;
                 (int, int, int, bool isExtensionBooster, int numVis, int distFromCenter)? bestDest = null;
@@ -435,10 +441,12 @@
 
             void FindBackwardPath(int x, int y, int dir)
             {
+                var bot = state.GetBot(0);
+
                 bfsPath.Clear();
                 var xx = x;
                 var yy = y;
-                while ((x, y, dir) != (state.X, state.Y, state.Dir))
+                while ((x, y, dir) != (bot.X, bot.Y, bot.Dir))
                 {
                     Debug.Assert(bfsNodes[x, y, dir].Generation == generation, "oops");
 
@@ -499,10 +507,11 @@
         {
             public WeightedState(State state, (WeightedState, Command)? prev, DistsFromCenter distsFromCenter)
             {
+                var bot = state.GetBot(0);
                 this.State = state;
                 this.Prev = prev;
                 this.BestVisibleCount = Math.Max(
-                    this.State.MaxUnwrappedVisibleDistFromCenter(this.State.X, this.State.Y, this.State.Dir, distsFromCenter).maxDist,
+                    this.State.MaxUnwrappedVisibleDistFromCenter(bot.X, bot.Y, bot.Dir, distsFromCenter).maxDist,
                     this.Prev?.state?.BestVisibleCount ?? 0);
             }
 
@@ -513,8 +522,8 @@
             public float CalcPriority(int startX, int startY) =>
                 (128 * this.BestVisibleCount) +
                 (8 * this.State.WrappedCellsCount) +
-                (0 * Math.Abs(this.State.X - startX)) +
-                (0 * Math.Abs(this.State.Y - startY)) +
+                (0 * Math.Abs(this.State.GetBot(0).X - startX)) +
+                (0 * Math.Abs(this.State.GetBot(0).Y - startY)) +
                 ((0.01f * this.State.Hash) / int.MaxValue);
         }
     }
