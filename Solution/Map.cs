@@ -250,8 +250,58 @@
 
         private (int, int) FindGraphCenter()
         {
-            // Ha-ha
-            return (this.StartX, this.StartY);
+            var queue = new Queue<(int, int)>();
+
+            (int, int, int[,]) Traverse(int startX, int startY)
+            {
+                var dists = new int[this.Width, this.Height];
+                queue.Enqueue((this.StartX, this.StartY));
+                dists[this.StartX, this.StartY] = 1;
+
+                while (true)
+                {
+                    var (x, y) = queue.Dequeue();
+
+                    TryAdd(-1, 0);
+                    TryAdd(1, 0);
+                    TryAdd(0, -1);
+                    TryAdd(0, 1);
+
+                    void TryAdd(int dx, int dy)
+                    {
+                        var nx = x + dx;
+                        var ny = y + dy;
+                        if (this.IsFree(nx, ny) && dists[nx, ny] == 0)
+                        {
+                            dists[nx, ny] = dists[x, y] + 1;
+                            queue.Enqueue((nx, ny));
+                        }
+                    }
+
+                    if (queue.Count == 0)
+                    {
+                        return (x, y, dists);
+                    }
+                }
+            }
+
+            var (furthestX, furthestY, dists1) = Traverse(this.StartX, this.StartY);
+            (furthestX, furthestY, dists1) = Traverse(furthestX, furthestY);
+
+            var mid = (1 + dists1[furthestX, furthestY]) / 2;
+
+            for (var x = 0; x < this.Width; ++x)
+            {
+                for (var y = 0; y < this.Height; ++y)
+                {
+                    if (dists1[x, y] == mid)
+                    {
+                        return (x, y);
+                    }
+                }
+            }
+
+            throw new InvalidOperationException("No center found!");
         }
 
         private void FindCellsToVisit()
