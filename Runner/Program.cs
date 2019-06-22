@@ -33,7 +33,7 @@
             var outputLock = new object();
 
             Parallel.ForEach(
-                Directory.EnumerateFiles("Data/maps", "*.desc").Reverse(),
+                Directory.EnumerateFiles("Data/maps", "*.desc"),
                 new ParallelOptions { MaxDegreeOfParallelism = -1 },
                 mapFile =>
                 {
@@ -45,6 +45,7 @@
 
                     var extSolutionPath = $"Data/extended-solutions/{mapName}.ext-sol";
 
+                    /*
                     // Delete broken solutions
                     if (File.Exists(extSolutionPath))
                     {
@@ -55,6 +56,7 @@
                             File.Delete(extSolutionPath);
                         }
                     }
+                    */
 
                     // Generate new solutions
                     foreach (var strategy in strategies)
