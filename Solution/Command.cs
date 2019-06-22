@@ -86,4 +86,15 @@
 
         public override string ToString() => "L";
     }
+
+    public class Clone : Command
+    {
+        private Clone()
+        {
+        }
+
+        public static Clone Instance { get; } = new Clone();
+
+        public override string ToString() => "C";
+    }
 }

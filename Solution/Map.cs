@@ -40,6 +40,7 @@
             Drill,
             MysteriousPoint,
             Teleport,
+            Clone,
         }
 
         public IReadOnlyCollection<(int, int)> CellsToVisit => this.cellsToVisit;
@@ -136,6 +137,7 @@
                 'F' => Cell.FastWheels,
                 'L' => Cell.Drill,
                 'X' => Cell.MysteriousPoint,
+                'C' => Cell.Clone,
                 _ => throw new ArgumentOutOfRangeException($"Invalid cell ascii representation: {c}"),
                 };
 
@@ -149,6 +151,7 @@
                 Cell.FastWheels => 'F',
                 Cell.Drill => 'L',
                 Cell.MysteriousPoint => 'X',
+                Cell.Clone => 'C',
                 _ => throw new Exception($"Invalid enum value: {cell}"),
                 };
 

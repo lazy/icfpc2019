@@ -44,6 +44,7 @@
                         'E' => Turn.Right,
                         'F' => UseFastWheels.Instance,
                         'L' => UseDrill.Instance,
+                        'C' => Clone.Instance,
                         _ => throw new ArgumentOutOfRangeException(nameof(commands), $"Unknown move: {commandKey}"),
                         };
                     ++i;

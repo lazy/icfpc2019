@@ -44,6 +44,7 @@ namespace Icfpc2019.Solution
                     'L' => Map.Cell.Drill,
                     'X' => Map.Cell.MysteriousPoint,
                     'R' => Map.Cell.Teleport,
+                    'C' => Map.Cell.Clone,
                     var ch => throw new Exception(string.Format("Unknown booster type", ch)),
                     };
             }
