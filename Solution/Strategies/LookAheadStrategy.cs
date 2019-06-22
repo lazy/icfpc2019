@@ -91,7 +91,14 @@
             this.bfsExtraDepth = bfsExtraDepth;
         }
 
-        public string Name => $"{nameof(LookAheadStrategy)}_{(this.symmetricGrowth ? "Sym" : "Assym")}_{(this.initSignGrowth > 0 ? "L" : "R")}_{this.recalcDistsFromCenterCount}_{this.forcedManipulatorExtensionsCount}_{this.bfsExtraDepth}";
+        public string Name => string.Join(
+            "_",
+            nameof(LookAheadStrategy),
+            this.symmetricGrowth ? "Sym" : "Assym",
+            this.initSignGrowth > 0 ? "L" : "R",
+            this.recalcDistsFromCenterCount,
+            this.forcedManipulatorExtensionsCount,
+            this.bfsExtraDepth);
 
         public IEnumerable<Command> Solve(Map map)
         {
