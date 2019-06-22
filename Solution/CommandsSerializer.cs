@@ -7,7 +7,10 @@
 
     public static class CommandsSerializer
     {
-        public static IEnumerable<Command> Parse(string commands)
+        public static Command[][] Parse(string commands) =>
+            commands.Split('#').Select(cmds => ParseOneBot(cmds).ToArray()).ToArray();
+
+        public static IEnumerable<Command> ParseOneBot(string commands)
         {
             var i = 0;
             while (i < commands.Length)
@@ -52,7 +55,7 @@
             }
         }
 
-        public static string Serialize(IEnumerable<Command> commands) =>
-            string.Join(string.Empty, commands);
+        public static string Serialize(params Command[][] commands) =>
+            string.Join('#', commands.Select(botCommands => string.Join(string.Empty, botCommands.AsEnumerable())));
     }
 }

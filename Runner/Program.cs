@@ -5,6 +5,7 @@
     using System.IO;
     using System.IO.Compression;
     using System.Linq;
+    using System.Reflection.Metadata.Ecma335;
     using System.Threading.Tasks;
 
     using Icfpc2019.Solution;
@@ -34,18 +35,32 @@
 
             Parallel.ForEach(
                 Directory.EnumerateFiles("Data/maps", "*.desc"),
-                new ParallelOptions { MaxDegreeOfParallelism = -1 },
+                new ParallelOptions { MaxDegreeOfParallelism = 1 },
                 mapFile =>
                 {
                     var log = new List<string>();
-
                     var mapName = Path.GetFileNameWithoutExtension(mapFile);
+
+                    if (!mapName.Contains("112"))
+                    {
+                        return;
+                    }
+
                     log.Add($"Processing {mapName}");
                     var map = MapParser.Parse(File.ReadAllText(mapFile));
 
+                    /*
+                    // temporary for clonning debugging
+                    if (map.NumCloneBoosts == 0 || map.NumSpawnPoints == 0)
+                    {
+                        return;
+                    }
+                    */
+
                     var extSolutionPath = $"Data/extended-solutions/{mapName}.ext-sol";
 
-                    /*
+                    var oldBestStrategyName = (string?)null;
+
                     // Delete broken solutions
                     if (File.Exists(extSolutionPath))
                     {
@@ -55,18 +70,18 @@
                         {
                             File.Delete(extSolutionPath);
                         }
+
+                        oldBestStrategyName = oldSolution.StrategyName;
                     }
-                    */
 
-                    // Generate new solutions
-                    foreach (var strategy in strategies)
+                    var solutions = strategies.AsParallel()
+                        .Where(strategy => !(mapName.Contains("294") && strategy.Name.Contains("DumbBfs")))
+                        .Select(strategy => (strategy, Emulator.MakeExtendedSolution(map, strategy)))
+                        .ToArray();
+
+                    foreach (var pair in solutions)
                     {
-                        if (mapName.Contains("294") && strategy.Name.Contains("DumbBfs"))
-                        {
-                            continue;
-                        }
-
-                        var solution = Emulator.MakeExtendedSolution(map, strategy);
+                        var (strategy, solution) = pair;
                         solution.SaveIfBetter(extSolutionPath);
                         log.Add($"  {strategy.Name}: {solution.IsSuccessful}/{solution.TimeUnits}");
                     }

@@ -1,7 +1,10 @@
 ﻿namespace Icfpc2019.Solution
 {
     using System;
+    using System.Diagnostics;
     using System.Runtime.CompilerServices;
+    using System.Runtime.InteropServices;
+    using System.Threading;
 
     // Key doesn't really matter
     using ImHashSet = ImTools.ImHashMap<(int, int), bool>;
@@ -17,16 +20,18 @@
         };
 
         private readonly Map map;
-        private readonly int x;
-        private readonly int y;
-        private readonly int dir;
+
+        /*
         private readonly int coordsHash;
         private readonly int hash;
+        */
+
+        private readonly Bot[] bots;
+
         private readonly ImHashSet wrappedCells;
         private readonly int wrappedCellsCount;
         private readonly ImHashSet pickedUpBoosterCoords;
         private readonly ImHashSet drilledCells;
-        private readonly (int, int)[] manipConfig;
 
         private readonly int manipulatorExtensionCount;
         private readonly int fastWheelsCount;
@@ -34,50 +39,46 @@
         private readonly int teleportsCount;
         private readonly int cloneCount;
 
-        private readonly int remainingSpeedBoostedMoves;
-        private readonly int remainingDrillMoves;
-
         public State(Map map)
             : this(
                 map,
-                map.StartX,
-                map.StartY,
-                dir: 0,
-                wrapped: UpdateWrappedCells(map, map.StartX, map.StartY, 0, InitManipConfig, ImHashSet.Empty, 0, 0),
+                new[]
+                {
+                    new Bot(
+                        x: map.StartX,
+                        y: map.StartY,
+                        dir: 0,
+                        manipConfig: InitManipConfig,
+                        remainingSpeedBoostedMoves: 0,
+                        remainingDrillMoves: 0),
+                },
+                wrapped: UpdateWrappedCells(map, map.StartX, map.StartY, 0, InitManipConfig, ImHashSet.Empty, 0),
                 pickedUpBoosterCoords: ImHashSet.Empty,
                 drilledCells: ImHashSet.Empty,
-                manipConfig: InitManipConfig,
                 manipulatorExtensionCount: 0,
                 fastWheelsCount: 0,
                 drillsCount: 0,
                 teleportsCount: 0,
-                cloneCount: 0,
-                remainingDrillMoves: 0,
-                remainingSpeedBoostedMoves: 0)
+                cloneCount: 0)
         {
         }
 
         private State(
             Map map,
-            int x,
-            int y,
-            int dir,
-            (ImHashSet Cells, int CellsCount, int coordsHash) wrapped,
+            Bot[] bots,
+            (ImHashSet Cells, int CellsCount) wrapped,
             ImHashSet pickedUpBoosterCoords,
             ImHashSet drilledCells,
-            (int, int)[] manipConfig,
             int manipulatorExtensionCount,
             int fastWheelsCount,
             int drillsCount,
             int teleportsCount,
-            int cloneCount,
-            int remainingSpeedBoostedMoves,
-            int remainingDrillMoves)
+            int cloneCount)
         {
             this.map = map;
-            this.x = x;
-            this.y = y;
-            this.dir = dir;
+            this.bots = bots;
+
+            /*
             this.coordsHash = wrapped.coordsHash;
             this.hash = HashCode.Combine(
                 x,
@@ -86,29 +87,25 @@
                 wrapped.coordsHash,
                 manipConfig.GetHashCode(),
                 fastWheelsCount + drillsCount + teleportsCount + cloneCount);
+            */
+
             this.wrappedCells = wrapped.Cells;
             this.wrappedCellsCount = wrapped.CellsCount;
             this.pickedUpBoosterCoords = pickedUpBoosterCoords;
             this.drilledCells = drilledCells;
-            this.manipConfig = manipConfig;
             this.manipulatorExtensionCount = manipulatorExtensionCount;
             this.fastWheelsCount = fastWheelsCount;
             this.drillsCount = drillsCount;
             this.teleportsCount = teleportsCount;
             this.cloneCount = cloneCount;
-            this.remainingSpeedBoostedMoves = remainingSpeedBoostedMoves;
-            this.remainingDrillMoves = remainingDrillMoves;
 
             // Debug.Assert(this.wrappedCellsCount == this.wrappedCells.Enumerate().Count(), "Counts do not match!");
         }
 
         public Map Map => this.map;
-        public int X => this.x;
-        public int Y => this.y;
-        public int Dir => this.dir;
-        public int Hash => this.hash;
+        public int BotsCount => this.bots.Length;
+        public int Hash => 0;
         public int ManipulatorExtensionCount => this.manipulatorExtensionCount;
-        public (int, int)[] ManipConfig => this.manipConfig;
         public int WrappedCellsCount => this.wrappedCellsCount;
 
         public static (int, int) TurnManip(int dir, (int, int) manipRelativeCoord)
@@ -124,6 +121,8 @@
                 };
         }
 
+        public Bot GetBot(int i) => this.bots[i];
+
         public bool IsWrapped(int x, int y) => this.wrappedCells.TryFind((x, y), out var _);
 
         public bool IsPickedUp(int x, int y) => this.pickedUpBoosterCoords.TryFind((x, y), out var _);
@@ -133,9 +132,10 @@
 
         public (int numVis, int maxDist) MaxUnwrappedVisibleDistFromCenter(int x, int y, int dir, DistsFromCenter dists)
         {
+            // FIXME: we consider only one bot
             var sumVis = 0;
             var max = 0;
-            foreach (var delta in this.manipConfig)
+            foreach (var delta in this.bots[0].ManipConfig)
             {
                 var (dx, dy) = TurnManip(dir, delta);
 
@@ -155,49 +155,88 @@
             return (sumVis, max);
         }
 
-        public State? Next(Command command)
+        public State? Next(params Command[] commands)
         {
-            switch (command)
+            if (commands.Length != this.BotsCount)
             {
-                case Move move:
-                    var newState = this.DoMove(move);
-
-                    if (newState?.remainingSpeedBoostedMoves >= 0)
-                    {
-                        newState = newState.DoMove(move, timeCost: 0) ?? newState;
-                    }
-
-                    return newState;
-                case Turn turn:
-                    return this.With(dir: (this.dir + turn.Ddir) & 3);
-                case UseManipulatorExtension useManip:
-                    return this.manipulatorExtensionCount <= 0
-                        ? null
-                        : this.AttachManip(useManip);
-                case UseFastWheels useFastWheels:
-                    return this.fastWheelsCount <= 0
-                        ? null
-                        : this.With(fastWheelsCount: this.fastWheelsCount - 1, remainingSpeedBoostedMoves: 50);
-                case UseDrill useDrill:
-                    return this.drillsCount <= 0
-                        ? null
-                        : this.With(drillsCount: this.drillsCount - 1, remainingDrillMoves: 30);
-                case Clone clone:
-                    throw new NotImplementedException();
-                default:
-                    throw new ArgumentOutOfRangeException(nameof(command), command.ToString());
+                return null;
             }
+
+            var newBots = new Bot[this.bots.Length];
+            var newWrappedCells = this.wrappedCells;
+            var newWrappedCellsCount = this.wrappedCellsCount;
+            var newPickedUpBoosterCoords = this.pickedUpBoosterCoords;
+            var newDrilledCells = this.drilledCells;
+
+            var newManipulatorExtensionCount = this.manipulatorExtensionCount;
+            var newFastWheelsCount = this.fastWheelsCount;
+            var newDrillsCount = this.drillsCount;
+            var newTeleportsCount = this.teleportsCount;
+            var newCloneCount = this.cloneCount;
+
+            for (var i = 0; i < this.bots.Length; ++i)
+            {
+                var bot = this.bots[i];
+
+                bot.PickUpBoosters(
+                    this,
+                    ref newPickedUpBoosterCoords,
+                    ref newManipulatorExtensionCount,
+                    ref newFastWheelsCount,
+                    ref newDrillsCount,
+                    ref newTeleportsCount,
+                    ref newCloneCount);
+
+                var command = commands[i];
+                var newBot = command switch
+                    {
+                    // we expect that once commands for bot are over than nulls will be fed up indefinitely for it
+                    // but do not really verify that
+                    null => bot,
+                    Move move => bot.DoMove(this, move, ref newWrappedCells, ref newWrappedCellsCount, ref newDrilledCells),
+                    Turn turn => bot.DoTurn(this, turn, ref newWrappedCells, ref newWrappedCellsCount),
+                    UseManipulatorExtension useManip => bot.AttachManip(
+                        this,
+                        useManip,
+                        ref newManipulatorExtensionCount,
+                        ref newWrappedCells,
+                        ref newWrappedCellsCount),
+                    UseFastWheels useFastWheels => bot.UseFastWheels(ref newFastWheelsCount),
+                    UseDrill useDrill => bot.UseDrill(ref newDrillsCount),
+                    Clone clone => bot.Clone(this, ref newBots, ref newCloneCount, ref newWrappedCells, ref newWrappedCellsCount),
+                    _ => throw new ArgumentOutOfRangeException(nameof(command), command.ToString()),
+                    };
+
+                if (newBot == null)
+                {
+                    return null;
+                }
+
+                newBots[i] = newBot;
+            }
+
+            return new State(
+                map: this.map,
+                bots: newBots,
+                wrapped: (newWrappedCells, newWrappedCellsCount),
+                pickedUpBoosterCoords: newPickedUpBoosterCoords,
+                drilledCells: newDrilledCells,
+                manipulatorExtensionCount: newManipulatorExtensionCount,
+                fastWheelsCount: newFastWheelsCount,
+                drillsCount: newDrillsCount,
+                teleportsCount: newTeleportsCount,
+                cloneCount: newCloneCount);
         }
 
-        private static (ImHashSet wrappedCells, int wrappedCellsCount, int coordsHash) UpdateWrappedCells(
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static (ImHashSet wrappedCells, int wrappedCellsCount) UpdateWrappedCells(
             Map map,
             int x,
             int y,
             int dir,
             (int, int)[] manipConfig,
             ImHashSet wrappedCells,
-            int wrappedCellsCount,
-            int coordsHash)
+            int wrappedCellsCount)
         {
             foreach (var delta in manipConfig)
             {
@@ -208,141 +247,289 @@
                 {
                     wrappedCells = wrappedCells.AddOrUpdate(manipCoord, true);
                     ++wrappedCellsCount;
-                    coordsHash += HashCode.Combine(x + dx, y + dy);
+
+                    // coordsHash += HashCode.Combine(x + dx, y + dy);
                 }
             }
 
-            return (wrappedCells, wrappedCellsCount, coordsHash);
+            return (wrappedCells, wrappedCellsCount);
         }
+
+        public class Bot
+        {
+            public Bot(
+                int x,
+                int y,
+                int dir,
+                (int, int)[] manipConfig,
+                int remainingSpeedBoostedMoves,
+                int remainingDrillMoves)
+            {
+                this.X = x;
+                this.Y = y;
+                this.Dir = dir;
+                this.ManipConfig = manipConfig;
+                this.RemainingSpeedBoostedMoves = remainingSpeedBoostedMoves;
+                this.RemainingDrillMoves = remainingDrillMoves;
+            }
+
+            public int X { get; }
+            public int Y { get; }
+            public int Dir { get; }
+
+            public (int, int)[] ManipConfig { get; }
+            public int RemainingSpeedBoostedMoves { get; }
+            public int RemainingDrillMoves { get; }
 
 #pragma warning disable SA1011
 
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private State With(
-            int? x = null,
-            int? y = null,
-            int? dir = null,
-            ImHashSet? pickedUpBoosterCoords = null,
-            ImHashSet? drilledCells = null,
-            (int, int)[]? manipConfig = null,
-            int? manipulatorExtensionCount = null,
-            int? fastWheelsCount = null,
-            int? drillsCount = null,
-            int? teleportsCount = null,
-            int? cloneCount = null,
-            int? remainingSpeedBoostedMoves = null,
-            int? remainingDrillMoves = null,
-            int timeCost = 1)
-        {
-            var wrapped = UpdateWrappedCells(
-                this.map,
-                x ?? this.x,
-                y ?? this.y,
-                dir ?? this.dir,
-                manipConfig ?? this.manipConfig,
-                this.wrappedCells,
-                this.wrappedCellsCount,
-                this.coordsHash);
-
-            return new State(
-                this.map,
-                x ?? this.x,
-                y ?? this.y,
-                dir ?? this.dir,
-                wrapped: wrapped,
-                pickedUpBoosterCoords ?? this.pickedUpBoosterCoords,
-                drilledCells ?? this.drilledCells,
-                manipConfig ?? this.manipConfig,
-                manipulatorExtensionCount ?? this.manipulatorExtensionCount,
-                fastWheelsCount ?? this.fastWheelsCount,
-                drillsCount ?? this.drillsCount,
-                teleportsCount ?? this.teleportsCount,
-                cloneCount ?? this.cloneCount,
-                remainingSpeedBoostedMoves ?? (this.remainingSpeedBoostedMoves - timeCost),
-                remainingDrillMoves ?? (this.remainingDrillMoves - timeCost));
-        }
-
-        private State? DoMove(Move move, int timeCost = 1)
-        {
-            var dx = move.Dx;
-            var dy = move.Dy;
-
-            var (newX, newY) = (this.x + dx, this.y + dy);
-            if (!this.map.IsFree(newX, newY) &&
-                !this.drilledCells.TryFind((newX, newY), out var _) &&
-                !(this.remainingDrillMoves > 0 && this.map[newX, newY] == Map.Cell.Obstacle))
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            public Bot With(
+                int? x = null,
+                int? y = null,
+                int? dir = null,
+                (int, int)[]? manipConfig = null,
+                int? remainingSpeedBoostedMoves = null,
+                int? remainingDrillMoves = null,
+                int timeCost = 1)
             {
-                // impossible move
-                return null;
+                return new Bot(
+                    x: x ?? this.X,
+                    y: y ?? this.Y,
+                    dir: dir ?? this.Dir,
+                    manipConfig: manipConfig ?? this.ManipConfig,
+                    remainingSpeedBoostedMoves: (remainingSpeedBoostedMoves ?? this.RemainingSpeedBoostedMoves) - timeCost,
+                    remainingDrillMoves: (remainingDrillMoves ?? this.RemainingDrillMoves) - timeCost);
             }
 
-            switch (this.map[newX, newY])
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            public void PickUpBoosters(
+                State state,
+                ref ImHashSet newPickedUpBoosterCoords,
+                ref int newManipulatorExtensionCount,
+                ref int newFastWheelsCount,
+                ref int newDrillsCount,
+                ref int newTeleportsCount,
+                ref int newCloneCount)
             {
-                case Map.Cell.Empty:
-                case Map.Cell.SpawnPoint:
-                    return this.With(x: newX, y: newY, timeCost: timeCost);
-                case Map.Cell.Obstacle:
-                    return this.remainingDrillMoves <= 0
-                        ? throw new InvalidOperationException()
-                        : this.With(x: newX, y: newY, drilledCells: this.drilledCells.AddOrUpdate((newX, newY), true), timeCost: timeCost);
-                case Map.Cell.FastWheels:
-                    var fwCnt = CountBooster(this.fastWheelsCount);
-                    return this.With(x: newX, y: newY, pickedUpBoosterCoords: fwCnt.PickedUp, fastWheelsCount: fwCnt.Counter, timeCost: timeCost);
-                case Map.Cell.Drill:
-                    var drillCnt = CountBooster(this.drillsCount);
-                    return this.With(x: newX, y: newY, pickedUpBoosterCoords: drillCnt.PickedUp, drillsCount: drillCnt.Counter, timeCost: timeCost);
-                case Map.Cell.ManipulatorExtension:
-                    var manipCnt = CountBooster(this.manipulatorExtensionCount);
-                    return this.With(x: newX, y: newY, pickedUpBoosterCoords: manipCnt.PickedUp, manipulatorExtensionCount: manipCnt.Counter, timeCost: timeCost);
-                case Map.Cell.Teleport:
-                    var teleCnt = CountBooster(this.teleportsCount);
-                    return this.With(x: newX, y: newY, pickedUpBoosterCoords: teleCnt.PickedUp, teleportsCount: teleCnt.Counter, timeCost: timeCost);
-                case Map.Cell.Clone:
-                    var cloneCnt = CountBooster(this.cloneCount);
-                    return this.With(x: newX, y: newY, pickedUpBoosterCoords: cloneCnt.PickedUp, cloneCount: cloneCnt.Counter, timeCost: timeCost);
-                case Map.Cell.Edge:
-                default:
-                    throw new InvalidOperationException($"Unexpected cell: {this.map[newX, newY]}");
+                switch (state.Map[this.X, this.Y])
+                {
+                    case Map.Cell.Empty:
+                    case Map.Cell.SpawnPoint:
+                        break;
+                    case Map.Cell.Obstacle:
+                        Debug.Assert(
+                            state.drilledCells.TryFind((this.X, this.Y), out var _),
+                            "Obstacles must be drilled");
+                        break;
+                    case Map.Cell.FastWheels:
+                        this.CountBooster(ref newPickedUpBoosterCoords, ref newFastWheelsCount);
+                        break;
+                    case Map.Cell.Drill:
+                        this.CountBooster(ref newPickedUpBoosterCoords, ref newDrillsCount);
+                        break;
+                    case Map.Cell.ManipulatorExtension:
+                        this.CountBooster(ref newPickedUpBoosterCoords, ref newManipulatorExtensionCount);
+                        break;
+                    case Map.Cell.Teleport:
+                        this.CountBooster(ref newPickedUpBoosterCoords, ref newTeleportsCount);
+                        break;
+                    case Map.Cell.Clone:
+                        this.CountBooster(ref newPickedUpBoosterCoords, ref newCloneCount);
+                        break;
+                    case Map.Cell.Edge:
+                    default:
+                        throw new InvalidOperationException($"Unexpected cell: {state.Map[this.X, this.Y]}");
+                }
             }
 
-            (ImHashSet PickedUp, int Counter) CountBooster(int counter) =>
-                this.pickedUpBoosterCoords.TryFind((newX, newY), out var _)
-                    ? (this.pickedUpBoosterCoords, counter)
-                    : (this.pickedUpBoosterCoords.AddOrUpdate((newX, newY), true), counter + 1);
-        }
-
-        private State? AttachManip(UseManipulatorExtension useManip)
-        {
-            var revDir = (4 - this.dir) & 3;
-            var (dx, dy) = TurnManip(revDir, (useManip.Dx, useManip.Dy));
-            var can = false;
-            foreach (var oldCoord in this.manipConfig)
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            public Bot? DoMove(
+                State state,
+                Move move,
+                ref ImHashSet newWrappedCells,
+                ref int newWrappedCellsCount,
+                ref ImHashSet newDrilledCells)
             {
-                var (oldDx, oldDy) = oldCoord;
-                var dist = Math.Abs(dx - oldDx) + Math.Abs(dy - oldDy);
-                if (dist == 0)
+                var bot = this.DoMoveImpl(state, move, ref newWrappedCells, ref newWrappedCellsCount, ref newDrilledCells, 1);
+
+                if (bot == null)
                 {
                     return null;
                 }
 
-                if (dist == 1)
+                // if original bot had extra moves
+                if (this.RemainingSpeedBoostedMoves > 0)
                 {
-                    can = true;
+                    bot = bot.DoMoveImpl(state, move, ref newWrappedCells, ref newWrappedCellsCount, ref newDrilledCells, 0) ?? bot;
+                }
+
+                return bot;
+            }
+
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            public Bot? DoMoveImpl(
+                State state,
+                Move move,
+                ref ImHashSet newWrappedCells,
+                ref int newWrappedCellsCount,
+                ref ImHashSet newDrilledCells,
+                int timeCost)
+            {
+                var dx = move.Dx;
+                var dy = move.Dy;
+
+                var (newX, newY) = (this.X + dx, this.Y + dy);
+                if (!state.Map.IsFree(newX, newY) &&
+                    !state.drilledCells.TryFind((newX, newY), out var _) &&
+                    !(this.RemainingDrillMoves > 0 && state.Map[newX, newY] == Map.Cell.Obstacle))
+                {
+                    // impossible move
+                    return null;
+                }
+
+                if (this.RemainingDrillMoves > 0 && state.Map[newX, newY] == Map.Cell.Obstacle)
+                {
+                    newDrilledCells = newDrilledCells.AddOrUpdate((newX, newY), true);
+                }
+
+                (newWrappedCells, newWrappedCellsCount) = UpdateWrappedCells(
+                    state.Map,
+                    newX,
+                    newY,
+                    this.Dir,
+                    this.ManipConfig,
+                    newWrappedCells,
+                    newWrappedCellsCount);
+
+                return this.With(x: newX, y: newY, timeCost: timeCost);
+            }
+
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            public Bot DoTurn(
+                State state,
+                Turn turn,
+                ref ImHashSet newWrappedCells,
+                ref int newWrappedCellsCount)
+            {
+                var newDir = (this.Dir + turn.Ddir) & 3;
+
+                (newWrappedCells, newWrappedCellsCount) = UpdateWrappedCells(
+                    state.Map,
+                    this.X,
+                    this.Y,
+                    newDir,
+                    this.ManipConfig,
+                    newWrappedCells,
+                    newWrappedCellsCount);
+
+                return this.With(dir: newDir);
+            }
+
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            public Bot? AttachManip(
+                State state,
+                UseManipulatorExtension useManip,
+                ref int newManipulatorExtensionsCount,
+                ref ImHashSet newWrappedCells,
+                ref int newWrappedCellsCount)
+            {
+                if (--newManipulatorExtensionsCount < 0)
+                {
+                    return null;
+                }
+
+                var revDir = (4 - this.Dir) & 3;
+                var (dx, dy) = TurnManip(revDir, (useManip.Dx, useManip.Dy));
+                var can = false;
+                foreach (var oldCoord in this.ManipConfig)
+                {
+                    var (oldDx, oldDy) = oldCoord;
+                    var dist = Math.Abs(dx - oldDx) + Math.Abs(dy - oldDy);
+                    if (dist == 0)
+                    {
+                        return null;
+                    }
+
+                    if (dist == 1)
+                    {
+                        can = true;
+                    }
+                }
+
+                if (!can)
+                {
+                    return null;
+                }
+
+                var newManipConfig = new (int, int)[this.ManipConfig.Length + 1];
+                Array.Copy(this.ManipConfig, newManipConfig, this.ManipConfig.Length);
+                newManipConfig[this.ManipConfig.Length] = (dx, dy);
+
+                (newWrappedCells, newWrappedCellsCount) = UpdateWrappedCells(
+                    state.Map,
+                    this.X,
+                    this.Y,
+                    this.Dir,
+                    newManipConfig,
+                    newWrappedCells,
+                    newWrappedCellsCount);
+
+                return this.With(manipConfig: newManipConfig);
+            }
+
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            public Bot? UseFastWheels(ref int newFastWheelsCount) =>
+                --newFastWheelsCount < 0
+                    ? null
+                    : this.With(remainingSpeedBoostedMoves: 51);
+
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            public Bot? UseDrill(ref int newDrillsCount) =>
+                --newDrillsCount < 0
+                    ? null
+                    : this.With(remainingDrillMoves: 31);
+
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            public Bot? Clone(
+                State state,
+                ref Bot[] newBots,
+                ref int newCloneCount,
+                ref ImHashSet newWrappedCells,
+                ref int newWrappedCellsCount)
+            {
+                if (--newCloneCount < 0 || state.Map[this.X, this.Y] != Map.Cell.SpawnPoint)
+                {
+                    return null;
+                }
+
+                var newerBots = new Bot[newBots.Length + 1];
+                Array.Copy(newBots, newerBots, newBots.Length);
+
+                newerBots[newBots.Length] = new Bot(this.X, this.Y, 0, InitManipConfig, 0, 0);
+                newBots = newerBots;
+
+                (newWrappedCells, newWrappedCellsCount) = UpdateWrappedCells(
+                    state.Map,
+                    this.X,
+                    this.Y,
+                    0,
+                    InitManipConfig,
+                    newWrappedCells,
+                    newWrappedCellsCount);
+
+                return this;
+            }
+
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            private void CountBooster(ref ImHashSet newPickedUpBoosterCoords, ref int counter)
+            {
+                if (!newPickedUpBoosterCoords.TryFind((this.X, this.Y), out var _))
+                {
+                    ++counter;
+                    newPickedUpBoosterCoords = newPickedUpBoosterCoords.AddOrUpdate((this.X, this.Y), true);
                 }
             }
-
-            if (!can)
-            {
-                return null;
-            }
-
-            var newManipConfig = new (int, int)[this.manipConfig.Length + 1];
-            Array.Copy(this.manipConfig, newManipConfig, this.manipConfig.Length);
-            newManipConfig[this.manipConfig.Length] = (dx, dy);
-
-            return this.With(
-                manipulatorExtensionCount: this.manipulatorExtensionCount - 1,
-                manipConfig: newManipConfig);
         }
     }
 }

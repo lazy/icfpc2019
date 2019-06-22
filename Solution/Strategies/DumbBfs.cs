@@ -2,7 +2,6 @@
 {
     using System;
     using System.Collections.Generic;
-    using System.Diagnostics;
     using System.Linq;
 
     public class DumbBfs : IStrategy
@@ -23,7 +22,10 @@
             Move.Down,
         };
 
-        public IEnumerable<Command> Solve(Map map)
+        public Command[][] Solve(State state) =>
+            new[] { this.Solve1(state.Map).ToArray() };
+
+        public IEnumerable<Command> Solve1(Map map)
         {
             int negativeExtension = 1;
             int positiveExtension = 1;
