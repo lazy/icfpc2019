@@ -2,13 +2,12 @@
 {
     using System;
     using System.Collections.Generic;
-    using System.Data;
     using System.Diagnostics;
     using System.Linq;
 
     using Priority_Queue;
 
-    public class LookAheadStrategy : IStrategy
+    public abstract class LookAheadStrategyBase : IStrategy
     {
         private const int BeamSize = 64;
         private const int BeamSearchDepth = 10;
@@ -25,6 +24,15 @@
             // TODO: fix BFS to support it
             // UseFastWheels.Instance,
         };
+
+        private bool symmetricGrowth;
+        private int initSignGrowth;
+
+        protected LookAheadStrategyBase(bool symmetricGrowth, int initSignGrowth)
+        {
+            this.symmetricGrowth = symmetricGrowth;
+            this.initSignGrowth = initSignGrowth;
+        }
 
         public IEnumerable<Command> Solve(Map map)
         {
@@ -56,25 +64,27 @@
                     // During walking we've found extension thingy - let's take it then!
                     if (state.ManipulatorExtensionCount > 0)
                     {
-                        // TODO: try different extension! strategies
-                        /*
-                        var extensionDist = state.ManipConfig.Length / 2;
-                        var sign = state.ManipConfig.Length % 2 == 0 ? 1 : -1;
-                        var (dx, dy) = State.TurnManip(state.Dir, (1, extensionDist * sign));
-                        yield return Next(new UseManipulatorExtension(dx, dy));
-                        break;
-                        */
-
-                        var extensionDist = state.ManipConfig.Length - 2;
-                        var sign = 1;
-                        if (extensionDist > 4)
+                        if (this.symmetricGrowth)
                         {
-                            extensionDist -= 3;
-                            sign = -1;
+                            var extensionDist = state.ManipConfig.Length / 2;
+                            var sign = this.initSignGrowth * (state.ManipConfig.Length % 2 == 0 ? 1 : -1);
+                            var (dx, dy) = State.TurnManip(state.Dir, (1, extensionDist * sign));
+                            yield return Next(new UseManipulatorExtension(dx, dy));
+                        }
+                        else
+                        {
+                            var extensionDist = state.ManipConfig.Length - 2;
+                            var sign = this.initSignGrowth;
+                            if (extensionDist > 4)
+                            {
+                                extensionDist -= 3;
+                                sign *= -1;
+                            }
+
+                            var (dx, dy) = State.TurnManip(state.Dir, (1, extensionDist * sign));
+                            yield return Next(new UseManipulatorExtension(dx, dy));
                         }
 
-                        var (dx, dy) = State.TurnManip(state.Dir, (1, extensionDist * sign));
-                        yield return Next(new UseManipulatorExtension(dx, dy));
                         break;
                     }
 
@@ -336,6 +346,30 @@
                 (8 * this.State.WrappedCellsCount) +
                 (0 * Math.Abs(this.State.X - startX)) +
                 (0 * Math.Abs(this.State.Y - startY));
+        }
+    }
+
+    public class LookAheadSymetric : LookAheadStrategyBase
+    {
+        public LookAheadSymetric()
+            : base(true, 1)
+        {
+        }
+    }
+
+    public class LookAheadGrowLeft : LookAheadStrategyBase
+    {
+        public LookAheadGrowLeft()
+            : base(false, 1)
+        {
+        }
+    }
+
+    public class LookAheadGrowRight : LookAheadStrategyBase
+    {
+        public LookAheadGrowRight()
+            : base(false, -1)
+        {
         }
     }
 }
