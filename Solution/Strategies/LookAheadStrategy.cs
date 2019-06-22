@@ -9,7 +9,7 @@
 
     public class LookAheadStrategy : IStrategy
     {
-        private const int BeamSize = 64;
+        private const int BeamSize = 10;
         private const int BeamSearchDepth = 10;
 
         private static readonly Command[] BeamSearchCommands =
@@ -79,11 +79,13 @@
             {
                 var curWrappedCount = state.WrappedCellsCount;
                 var beam = new FastPriorityQueue<WeightedState>(BeamSize + 1);
+                var seenStates = new HashSet<int>();
 
                 beam.Enqueue(new WeightedState(state, null), CalcPriority(state));
 
                 var bestState = (WeightedState?)null;
 
+                // var numCollisions = 0
                 for (var depth = 0; depth < BeamSearchDepth; ++depth)
                 {
                     var prevBeam = beam.ToArray();
@@ -94,8 +96,18 @@
                         foreach (var command in BeamSearchCommands)
                         {
                             var nextState = prevState.State.Next(command);
+
                             if (nextState != null)
                             {
+                                /*
+                                if (seenStates.Contains(nextState.Hash))
+                                {
+                                    ++numCollisions;
+                                    continue;
+                                }
+                                */
+
+                                seenStates.Add(nextState.Hash);
                                 if (beam.Count < BeamSize ||
                                     nextState.WrappedCellsCount > beam.First.State.WrappedCellsCount)
                                 {
@@ -120,6 +132,7 @@
                     }
                 }
 
+                // Console.WriteLine($"Collisions: {numCollisions}")
                 if (bestState == null)
                 {
                     return null;
