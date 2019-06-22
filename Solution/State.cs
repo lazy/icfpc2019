@@ -190,23 +190,23 @@
 
                 var command = commands[i];
                 var newBot = command switch
-                {
-                // we expect that once commands for bot are over than nulls will be fed up indefinitely for it
-                // but do not really verify that
-                null => bot,
-                Move move => bot.DoMove(this, move, ref newWrappedCells, ref newWrappedCellsCount),
-                Turn turn => bot.DoTurn(this, turn, ref newWrappedCells, ref newWrappedCellsCount),
-                UseManipulatorExtension useManip => bot.AttachManip(
-                    this,
-                    useManip,
-                    ref newManipulatorExtensionCount,
-                    ref newWrappedCells,
-                    ref newWrappedCellsCount),
-                UseFastWheels useFastWheels => bot.UseFastWheels(ref newFastWheelsCount),
-                UseDrill useDrill => bot.UseDrill(ref newDrillsCount),
-                Clone clone => throw new NotImplementedException(),
-                _ => throw new ArgumentOutOfRangeException(nameof(command), command.ToString()),
-                };
+                    {
+                    // we expect that once commands for bot are over than nulls will be fed up indefinitely for it
+                    // but do not really verify that
+                    null => bot,
+                    Move move => bot.DoMove(this, move, ref newWrappedCells, ref newWrappedCellsCount, ref newDrilledCells),
+                    Turn turn => bot.DoTurn(this, turn, ref newWrappedCells, ref newWrappedCellsCount),
+                    UseManipulatorExtension useManip => bot.AttachManip(
+                        this,
+                        useManip,
+                        ref newManipulatorExtensionCount,
+                        ref newWrappedCells,
+                        ref newWrappedCellsCount),
+                    UseFastWheels useFastWheels => bot.UseFastWheels(ref newFastWheelsCount),
+                    UseDrill useDrill => bot.UseDrill(ref newDrillsCount),
+                    Clone clone => throw new NotImplementedException(),
+                    _ => throw new ArgumentOutOfRangeException(nameof(command), command.ToString()),
+                    };
 
                 if (newBot == null)
                 {
@@ -299,7 +299,7 @@
                     y: y ?? this.Y,
                     dir: dir ?? this.Dir,
                     manipConfig: manipConfig ?? this.ManipConfig,
-                    remainingSpeedBoostedMoves: (remainingDrillMoves ?? this.RemainingSpeedBoostedMoves) - timeCost,
+                    remainingSpeedBoostedMoves: (remainingSpeedBoostedMoves ?? this.RemainingSpeedBoostedMoves) - timeCost,
                     remainingDrillMoves: (remainingDrillMoves ?? this.RemainingDrillMoves) - timeCost);
             }
 
@@ -349,7 +349,33 @@
                 State state,
                 Move move,
                 ref ImHashSet newWrappedCells,
-                ref int newWrappedCellsCount)
+                ref int newWrappedCellsCount,
+                ref ImHashSet newDrilledCells)
+            {
+                var bot = this.DoMoveImpl(state, move, ref newWrappedCells, ref newWrappedCellsCount, ref newDrilledCells, 1);
+
+                if (bot == null)
+                {
+                    return null;
+                }
+
+                // if original bot had extra moves
+                if (this.RemainingSpeedBoostedMoves > 0)
+                {
+                    bot = bot.DoMoveImpl(state, move, ref newWrappedCells, ref newWrappedCellsCount, ref newDrilledCells, 0) ?? bot;
+                }
+
+                return bot;
+            }
+
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            public Bot? DoMoveImpl(
+                State state,
+                Move move,
+                ref ImHashSet newWrappedCells,
+                ref int newWrappedCellsCount,
+                ref ImHashSet newDrilledCells,
+                int timeCost)
             {
                 var dx = move.Dx;
                 var dy = move.Dy;
@@ -363,6 +389,11 @@
                     return null;
                 }
 
+                if (this.RemainingDrillMoves > 0 && state.Map[newX, newY] == Map.Cell.Obstacle)
+                {
+                    newDrilledCells = newDrilledCells.AddOrUpdate((newX, newY), true);
+                }
+
                 (newWrappedCells, newWrappedCellsCount) = UpdateWrappedCells(
                     state.Map,
                     newX,
@@ -372,7 +403,7 @@
                     newWrappedCells,
                     newWrappedCellsCount);
 
-                return this.With(x: newX, y: newY);
+                return this.With(x: newX, y: newY, timeCost: timeCost);
             }
 
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
