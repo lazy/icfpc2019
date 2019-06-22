@@ -27,8 +27,20 @@
                         {
                             foreach (var extraDepth in new[] { 1, 2, 3, 4, 5, })
                             {
-                                yield return new LookAheadStrategy(
-                                    sym, growthSign, recalcsTime, forcedManipulatorExtensionsCount, extraDepth);
+                                foreach (var removeTurns in new[] { true /*, false */ })
+                                {
+                                    foreach (var numVisCoeff in new[] { /* 0, */ 1 })
+                                    {
+                                        yield return new LookAheadStrategy(
+                                            sym,
+                                            growthSign,
+                                            recalcsTime,
+                                            forcedManipulatorExtensionsCount,
+                                            extraDepth,
+                                            removeTurns,
+                                            numVisCoeff);
+                                    }
+                                }
                             }
                         }
                     }
@@ -76,19 +88,25 @@
         private readonly int recalcDistsFromCenterCount;
         private readonly int forcedManipulatorExtensionsCount;
         private readonly int bfsExtraDepth;
+        private readonly bool removeTurns;
+        private readonly int numVisCoeff;
 
         public LookAheadStrategy(
             bool symmetricGrowth,
             int initSignGrowth,
             int recalcDistsFromCenterCount,
             int forcedManipulatorExtensionsCount,
-            int bfsExtraDepth)
+            int bfsExtraDepth,
+            bool removeTurns,
+            int numVisCoeff)
         {
             this.symmetricGrowth = symmetricGrowth;
             this.initSignGrowth = initSignGrowth;
             this.recalcDistsFromCenterCount = recalcDistsFromCenterCount;
             this.forcedManipulatorExtensionsCount = forcedManipulatorExtensionsCount;
             this.bfsExtraDepth = bfsExtraDepth;
+            this.removeTurns = removeTurns;
+            this.numVisCoeff = numVisCoeff;
         }
 
         public string Name => string.Join(
@@ -98,7 +116,9 @@
             this.initSignGrowth > 0 ? "L" : "R",
             this.recalcDistsFromCenterCount,
             this.forcedManipulatorExtensionsCount,
-            this.bfsExtraDepth);
+            this.bfsExtraDepth,
+            this.removeTurns ? "RT" : "KT",
+            this.numVisCoeff);
 
         public IEnumerable<Command> Solve(Map map)
         {
@@ -340,7 +360,7 @@
                 bfsNodes[state.X, state.Y, state.Dir] = new BfsNode(generation, -1, 0);
 
                 int? maxDepth = null;
-                (int, int, int, bool isExtensionBooster, int distFromCenter)? bestDest = null;
+                (int, int, int, bool isExtensionBooster, int numVis, int distFromCenter)? bestDest = null;
 
                 while (bfsQueue.Count > 0)
                 {
@@ -356,15 +376,15 @@
                             throw new InvalidOperationException();
                         }
 
-                        var (destX, destY, destDir, destIsExtensionBooster, bestDistFromCenter) = bestDest.Value;
+                        var (destX, destY, destDir, destIsExtensionBooster, destNumVis, bestDistFromCenter) = bestDest.Value;
                         FindBackwardPath(destX, destY, destDir);
                         return;
                     }
 
                     // path found, but search a bit more for deeper fruits
                     var isExtensionBooster = map[x, y] == Map.Cell.ManipulatorExtension && !state.IsPickedUp(x, y);
-                    var distFromCenter = state.MaxUnwrappedVisibleDistFromCenter(x, y, dir, distsFromCenter);
-                    if (distFromCenter > 0 || isExtensionBooster)
+                    var (numVis, distFromCenter) = state.MaxUnwrappedVisibleDistFromCenter(x, y, dir, distsFromCenter);
+                    if (numVis > 0 || isExtensionBooster)
                     {
                         if (maxDepth == null)
                         {
@@ -372,9 +392,9 @@
                         }
 
                         if (bestDest == null ||
-                            Quality(isExtensionBooster, distFromCenter) > Quality(bestDest.Value.isExtensionBooster, bestDest.Value.distFromCenter))
+                            Quality(isExtensionBooster, numVis, distFromCenter) > Quality(bestDest.Value.isExtensionBooster, bestDest.Value.numVis, bestDest.Value.distFromCenter))
                         {
-                            bestDest = (x, y, dir, isExtensionBooster, distFromCenter);
+                            bestDest = (x, y, dir, isExtensionBooster, numVis, distFromCenter);
                         }
                     }
 
@@ -402,12 +422,12 @@
                     }
                 }
 
-                var (finalX, finalY, finalDir, p1, p2) =
+                var (finalX, finalY, finalDir, p1, p2, p3) =
                     bestDest ?? throw new InvalidOperationException("Couldn't find any path with BFS!");
                 FindBackwardPath(finalX, finalY, finalDir);
 
-                int Quality(bool isBooster, int distFromCenter1) =>
-                    (isBooster ? 1000 : 0) + distFromCenter1;
+                int Quality(bool isBooster, int numVis, int distFromCenter1) =>
+                    (isBooster ? 10000 : 0) + (this.numVisCoeff * numVis) + (10 * distFromCenter1);
             }
 
             void FindBackwardPath(int x, int y, int dir)
@@ -438,7 +458,7 @@
                 bfsPath.Reverse();
 
                 // if there's more than one command, then filter out all turns
-                if (bfsPath.Count > 1)
+                if (this.removeTurns && bfsPath.Count > 1)
                 {
                     var writeIdx = 0;
                     for (var i = 0; i < bfsPath.Count; ++i)
@@ -479,7 +499,7 @@
                 this.State = state;
                 this.Prev = prev;
                 this.BestVisibleCount = Math.Max(
-                    this.State.MaxUnwrappedVisibleDistFromCenter(this.State.X, this.State.Y, this.State.Dir, distsFromCenter),
+                    this.State.MaxUnwrappedVisibleDistFromCenter(this.State.X, this.State.Y, this.State.Dir, distsFromCenter).maxDist,
                     this.Prev?.state?.BestVisibleCount ?? 0);
             }
 

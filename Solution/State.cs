@@ -129,10 +129,11 @@
         public bool IsPickedUp(int x, int y) => this.pickedUpBoosterCoords.TryFind((x, y), out var _);
 
         public bool UnwrappedVisible(int x, int y, int dir, DistsFromCenter dists) =>
-            this.MaxUnwrappedVisibleDistFromCenter(x, y, dir, dists) != 0;
+            this.MaxUnwrappedVisibleDistFromCenter(x, y, dir, dists).Item1 != 0;
 
-        public int MaxUnwrappedVisibleDistFromCenter(int x, int y, int dir, DistsFromCenter dists)
+        public (int numVis, int maxDist) MaxUnwrappedVisibleDistFromCenter(int x, int y, int dir, DistsFromCenter dists)
         {
+            var numVis = 0;
             var max = 0;
             foreach (var delta in this.manipConfig)
             {
@@ -141,14 +142,17 @@
                 var manipCoord = (x + dx, y + dy);
                 if (this.map.IsFree(x + dx, y + dy) &&
                     !this.wrappedCells.TryFind(manipCoord, out var _) &&
-                    dists.GetDist(x + dx, y + dy) > max &&
                     this.map.AreVisible(x, y, x + dx, y + dy))
                 {
-                    max = dists.GetDist(x + dx, y + dy);
+                    ++numVis;
+                    if (dists.GetDist(x + dx, y + dy) > max)
+                    {
+                        max = dists.GetDist(x + dx, y + dy);
+                    }
                 }
             }
 
-            return max;
+            return (numVis, max);
         }
 
         public State? Next(Command command)
