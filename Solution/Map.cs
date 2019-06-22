@@ -95,9 +95,14 @@
             return new Map(startX, startY, cells);
         }
 
+        public bool InBounds(int x, int y)
+        {
+            return x >= 0 && y >= 0 && x < this.Width && y < this.Height;
+        }
+
         public bool IsFree(int x, int y)
         {
-            if (x < 0 || y < 0 || x >= this.Width || y >= this.Height)
+            if (!this.InBounds(x, y))
             {
                 return false;
             }

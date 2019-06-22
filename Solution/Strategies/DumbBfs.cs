@@ -27,27 +27,37 @@
         {
             int negativeExtension = 1;
             int positiveExtension = 1;
+            int drillTime = 0;
 
             var startPoint = new Point { X = map.StartX, Y = map.StartY };
             var toVisit = map.CellsToVisit.Select(x => new Point { X = x.Item1, Y = x.Item2 }).ToHashSet();
 
             while (toVisit.Count > 0)
             {
-                if (map.IsFree(startPoint.X, startPoint.Y) && map[startPoint.X, startPoint.Y] == Map.Cell.ManipulatorExtension)
+                if (map.IsFree(startPoint.X, startPoint.Y))
                 {
-                    if (positiveExtension == negativeExtension)
+                    if (map[startPoint.X, startPoint.Y] == Map.Cell.ManipulatorExtension)
                     {
-                        yield return new UseManipulatorExtension(1, positiveExtension + 1);
-                        ++positiveExtension;
+                        if (positiveExtension == negativeExtension)
+                        {
+                            yield return new UseManipulatorExtension(1, positiveExtension + 1);
+                            ++positiveExtension;
+                        }
+                        else
+                        {
+                            yield return new UseManipulatorExtension(1, -(negativeExtension + 1));
+                            ++negativeExtension;
+                        }
                     }
-                    else
+
+                    if (map[startPoint.X, startPoint.Y] == Map.Cell.Drill)
                     {
-                        yield return new UseManipulatorExtension(1, -(negativeExtension + 1));
-                        ++negativeExtension;
+                        yield return UseDrill.Instance;
+                        drillTime = 30;
                     }
                 }
 
-                var result = this.RunBfs(map, startPoint, toVisit, positiveExtension, negativeExtension);
+                var result = this.RunBfs(map, startPoint, toVisit, positiveExtension, negativeExtension, drillTime);
                 if (result == null)
                 {
                     throw new Exception("The BFS should have returned a result");
@@ -56,6 +66,7 @@
                 foreach (var m in result.PathFragment)
                 {
                     yield return m;
+                    --drillTime;
                 }
 
                 startPoint = result.FirstReachedPoint;
@@ -66,17 +77,21 @@
             }
         }
 
-        private BfsResult? RunBfs(Map map, Point startPoint, HashSet<Point> toVisit, int positiveExtension, int negativeExtension)
+        private BfsResult? RunBfs(Map map, Point startPoint, HashSet<Point> toVisit, int positiveExtension, int negativeExtension, int drillTime)
         {
             var queue = new Queue<Point>();
             var visited = new HashSet<Point>();
             var pathTrace = new Dictionary<Point, (Command, Point)>();
+            var dist = new Dictionary<Point, int>();
             visited.Add(startPoint);
             queue.Enqueue(startPoint);
+            dist.Add(startPoint, 0);
 
             while (queue.Count > 0)
             {
                 var curPoint = queue.Dequeue();
+                var curDist = dist[curPoint];
+                var drillActive = curDist < drillTime;
 
                 if (toVisit.Contains(curPoint))
                 {
@@ -120,10 +135,11 @@
                 {
                     var delta = Deltas[idx];
                     var nextPoint = new Point { X = curPoint.X + delta.X, Y = curPoint.Y + delta.Y };
-                    if (!visited.Contains(nextPoint) && map.IsFree(nextPoint.X, nextPoint.Y))
+                    if (!visited.Contains(nextPoint) && (map.IsFree(nextPoint.X, nextPoint.Y) || (drillActive && map.InBounds(nextPoint.X, nextPoint.Y) && map[nextPoint.X, nextPoint.Y] == Map.Cell.Obstacle)))
                     {
                         visited.Add(nextPoint);
                         queue.Enqueue(nextPoint);
+                        dist.Add(nextPoint, curDist + 1);
                         pathTrace.Add(nextPoint, (Moves[idx], curPoint));
                     }
                 }
