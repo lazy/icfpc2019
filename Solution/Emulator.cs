@@ -7,21 +7,11 @@
 
     public static class Emulator
     {
-        public static ExtendedSolution MakeExtendedSolution(Map map, IStrategy strategy) =>
-            MakeExtendedSolution(map, strategy.Name, strategy.Solve(new State(map)));
-
-        public static ExtendedSolution MakeExtendedSolution(Map map, string strategyName, Command[][] moves)
+        public static ExtendedSolution MakeExtendedSolution(Map map, IStrategy strategy)
         {
             try
             {
-                var (isValid, timeUnits) = IsValidSolution(map, moves);
-                return new ExtendedSolution(
-                    isSuccessful: isValid,
-                    timeUnits: timeUnits,
-                    comment: isValid ? "valid" : "invalid",
-                    strategyName: strategyName,
-                    gitCommitId: GitInfo.GitCommit,
-                    moves: moves);
+                return MakeExtendedSolution(map, strategy.Name, strategy.Solve(new State(map)));
             }
             catch (Exception ex)
             {
@@ -29,10 +19,22 @@
                     isSuccessful: false,
                     timeUnits: null,
                     comment: ex.Message.Replace("\n", "\\n"),
-                    strategyName: strategyName,
+                    strategyName: strategy.Name,
                     gitCommitId: GitInfo.GitCommit,
                     commands: string.Empty);
             }
+        }
+
+        public static ExtendedSolution MakeExtendedSolution(Map map, string strategyName, Command[][] moves)
+        {
+            var (isValid, timeUnits) = IsValidSolution(map, moves);
+            return new ExtendedSolution(
+                isSuccessful: isValid,
+                timeUnits: timeUnits,
+                comment: isValid ? "valid" : "invalid",
+                strategyName: strategyName,
+                gitCommitId: GitInfo.GitCommit,
+                moves: moves);
         }
 
         public static (bool isValid, int? timeUnits) IsValidSolution(Map map, Command[][] commands)
