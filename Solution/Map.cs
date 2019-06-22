@@ -40,7 +40,7 @@
             ManipulatorExtension,
             FastWheels,
             Drill,
-            MysteriousPoint,
+            SpawnPoint,
             Teleport,
             Clone,
         }
@@ -209,7 +209,7 @@
                 'B' => Cell.ManipulatorExtension,
                 'F' => Cell.FastWheels,
                 'L' => Cell.Drill,
-                'X' => Cell.MysteriousPoint,
+                'X' => Cell.SpawnPoint,
                 'C' => Cell.Clone,
                 _ => throw new ArgumentOutOfRangeException($"Invalid cell ascii representation: {c}"),
                 };
@@ -223,7 +223,7 @@
                 Cell.ManipulatorExtension => 'B',
                 Cell.FastWheels => 'F',
                 Cell.Drill => 'L',
-                Cell.MysteriousPoint => 'X',
+                Cell.SpawnPoint => 'X',
                 Cell.Clone => 'C',
                 _ => throw new Exception($"Invalid enum value: {cell}"),
                 };

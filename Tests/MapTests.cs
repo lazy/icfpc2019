@@ -41,7 +41,7 @@
             Assert.Equal(Map.Cell.ManipulatorExtension, map[7, 2]);
             Assert.Equal(Map.Cell.FastWheels, map[8, 2]);
             Assert.Equal(Map.Cell.Drill, map[9, 2]);
-            Assert.Equal(Map.Cell.MysteriousPoint, map[10, 2]);
+            Assert.Equal(Map.Cell.SpawnPoint, map[10, 2]);
         }
 
         [Fact]

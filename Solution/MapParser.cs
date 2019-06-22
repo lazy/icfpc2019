@@ -42,7 +42,7 @@ namespace Icfpc2019.Solution
                     'B' => Map.Cell.ManipulatorExtension,
                     'F' => Map.Cell.FastWheels,
                     'L' => Map.Cell.Drill,
-                    'X' => Map.Cell.MysteriousPoint,
+                    'X' => Map.Cell.SpawnPoint,
                     'R' => Map.Cell.Teleport,
                     'C' => Map.Cell.Clone,
                     var ch => throw new Exception(string.Format("Unknown booster type", ch)),

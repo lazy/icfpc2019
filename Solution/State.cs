@@ -31,7 +31,6 @@
         private readonly int manipulatorExtensionCount;
         private readonly int fastWheelsCount;
         private readonly int drillsCount;
-        private readonly int mysteriousPointsCount;
         private readonly int teleportsCount;
         private readonly int cloneCount;
 
@@ -51,7 +50,6 @@
                 manipulatorExtensionCount: 0,
                 fastWheelsCount: 0,
                 drillsCount: 0,
-                mysteriousPointsCount: 0,
                 teleportsCount: 0,
                 cloneCount: 0,
                 remainingDrillMoves: 0,
@@ -71,7 +69,6 @@
             int manipulatorExtensionCount,
             int fastWheelsCount,
             int drillsCount,
-            int mysteriousPointsCount,
             int teleportsCount,
             int cloneCount,
             int remainingSpeedBoostedMoves,
@@ -97,7 +94,6 @@
             this.manipulatorExtensionCount = manipulatorExtensionCount;
             this.fastWheelsCount = fastWheelsCount;
             this.drillsCount = drillsCount;
-            this.mysteriousPointsCount = mysteriousPointsCount;
             this.teleportsCount = teleportsCount;
             this.cloneCount = cloneCount;
             this.remainingSpeedBoostedMoves = remainingSpeedBoostedMoves;
@@ -226,7 +222,6 @@
             int? manipulatorExtensionCount = null,
             int? fastWheelsCount = null,
             int? drillsCount = null,
-            int? mysteriousPointsCount = null,
             int? teleportsCount = null,
             int? cloneCount = null,
             int? remainingSpeedBoostedMoves = null,
@@ -255,7 +250,6 @@
                 manipulatorExtensionCount ?? this.manipulatorExtensionCount,
                 fastWheelsCount ?? this.fastWheelsCount,
                 drillsCount ?? this.drillsCount,
-                mysteriousPointsCount ?? this.mysteriousPointsCount,
                 teleportsCount ?? this.teleportsCount,
                 cloneCount ?? this.cloneCount,
                 remainingSpeedBoostedMoves ?? (this.remainingSpeedBoostedMoves - timeCost),
@@ -279,6 +273,7 @@
             switch (this.map[newX, newY])
             {
                 case Map.Cell.Empty:
+                case Map.Cell.SpawnPoint:
                     return this.With(x: newX, y: newY, timeCost: timeCost);
                 case Map.Cell.Obstacle:
                     return this.remainingDrillMoves <= 0
@@ -293,9 +288,6 @@
                 case Map.Cell.ManipulatorExtension:
                     var manipCnt = CountBooster(this.manipulatorExtensionCount);
                     return this.With(x: newX, y: newY, pickedUpBoosterCoords: manipCnt.PickedUp, manipulatorExtensionCount: manipCnt.Counter, timeCost: timeCost);
-                case Map.Cell.MysteriousPoint:
-                    var mystCnt = CountBooster(this.mysteriousPointsCount);
-                    return this.With(x: newX, y: newY, pickedUpBoosterCoords: mystCnt.PickedUp, mysteriousPointsCount: mystCnt.Counter, timeCost: timeCost);
                 case Map.Cell.Teleport:
                     var teleCnt = CountBooster(this.teleportsCount);
                     return this.With(x: newX, y: newY, pickedUpBoosterCoords: teleCnt.PickedUp, teleportsCount: teleCnt.Counter, timeCost: timeCost);
