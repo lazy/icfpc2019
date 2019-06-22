@@ -80,7 +80,7 @@
                 var curWrappedCount = state.WrappedCellsCount;
                 var beam = new FastPriorityQueue<WeightedState>(BeamSize + 1);
 
-                beam.Enqueue(new WeightedState(state, null), state.WrappedCellsCount);
+                beam.Enqueue(new WeightedState(state, null), CalcPriority(state));
 
                 var bestState = (WeightedState?)null;
 
@@ -100,7 +100,7 @@
                                     nextState.WrappedCellsCount > beam.First.State.WrappedCellsCount)
                                 {
                                     var nextWeightedState = new WeightedState(nextState, (prevState, command));
-                                    beam.Enqueue(nextWeightedState, nextState.WrappedCellsCount);
+                                    beam.Enqueue(nextWeightedState, CalcPriority(nextState));
 
                                     // remove worst states
                                     if (beam.Count > BeamSize)
@@ -136,6 +136,9 @@
                 }
 
                 return firstCommand;
+
+                float CalcPriority(State newState) =>
+                    newState.WrappedCellsCount + (0.01f * (Math.Abs(newState.X - state.X) + Math.Abs(newState.Y - state.Y)));
             }
 
             void Bfs()
