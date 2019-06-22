@@ -2,6 +2,7 @@
 {
     using System;
     using System.Collections.Generic;
+    using System.Data;
     using System.Diagnostics;
     using System.Linq;
 
@@ -52,6 +53,17 @@
 
                 for (var i = 0; i < bfsPath.Count; ++i)
                 {
+                    // During walking we've found extension thingy - let's take it then!
+                    if (state.ManipulatorExtensionCount > 0)
+                    {
+                        // TODO: try different extension! strategies
+                        var extensionDist = state.ManipConfig.Length / 2;
+                        var sign = state.ManipConfig.Length % 2 == 0 ? 1 : -1;
+                        var (dx, dy) = State.TurnManip(state.Dir, (1, extensionDist * sign));
+                        yield return Next(new UseManipulatorExtension(dx, dy));
+                        break;
+                    }
+
                     var bfsCommand = bfsPath[i];
 
                     if (i >= bfsPath.Count - 10)
