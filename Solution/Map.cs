@@ -186,17 +186,26 @@
                 }
             }
 
-            switch (majorTotalDelta)
+            for (var mj = 1; mj < majorTotalDelta; ++mj)
             {
-                case 2:
-                    return CheckOneCell(0, 1) && CheckOneCell(1, 1);
-                case 3:
-                    return CheckOneCell(0, 1) && CheckOneCell(1, 2);
-                case 4:
-                    return CheckOneCell(0, 1) && CheckOneCell(0, 2) && CheckOneCell(1, 2) && CheckOneCell(1, 3);
-                default:
-                    return false;
+                if ((majorTotalDelta % 2 == 0) && (mj == majorTotalDelta / 2))
+                {
+                    if (!CheckOneCell(0, mj) || !CheckOneCell(1, mj))
+                    {
+                        return false;
+                    }
+                }
+                else
+                {
+                    var mn = mj > majorTotalDelta / 2 ? 1 : 0;
+                    if (!CheckOneCell(mn, mj))
+                    {
+                        return false;
+                    }
+                }
             }
+
+            return true;
         }
 
         public override string ToString()
