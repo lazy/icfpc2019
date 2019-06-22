@@ -20,7 +20,9 @@
             Move.Right,
             Turn.Left,
             Turn.Right,
-            UseFastWheels.Instance,
+
+            // TODO: fix BFS to support it
+            // UseFastWheels.Instance,
         };
 
         public IEnumerable<Command> Solve(Map map)
@@ -59,12 +61,14 @@
                         if (command != null && !command.Equals(bfsCommand))
                         {
                             // found a command that is different from bfs path, it invalidates bfs
+                            // Console.WriteLine($"    BS: {command}, bfs[{i}/{bfsPath.Count}]: {bfsCommand}");
                             yield return Next(command);
                             break;
                         }
                     }
 
                     // just go according to bfs
+                    // Console.WriteLine($"        bfs[{i}/{bfsPath.Count}]: {bfsCommand}");
                     yield return Next(bfsCommand);
                 }
             }
