@@ -39,46 +39,41 @@
         public State(Map map)
             : this(
                 map,
-                map.StartX,
-                map.StartY,
-                dir: 0,
+                new[]
+                {
+                    new Bot(
+                        x: map.StartX,
+                        y: map.StartY,
+                        dir: 0,
+                        manipConfig: InitManipConfig,
+                        remainingSpeedBoostedMoves: 0,
+                        remainingDrillMoves: 0),
+                },
                 wrapped: UpdateWrappedCells(map, map.StartX, map.StartY, 0, InitManipConfig, ImHashSet.Empty, 0, 0),
                 pickedUpBoosterCoords: ImHashSet.Empty,
                 drilledCells: ImHashSet.Empty,
-                manipConfig: InitManipConfig,
                 manipulatorExtensionCount: 0,
                 fastWheelsCount: 0,
                 drillsCount: 0,
                 teleportsCount: 0,
-                cloneCount: 0,
-                remainingDrillMoves: 0,
-                remainingSpeedBoostedMoves: 0)
+                cloneCount: 0)
         {
         }
 
         private State(
             Map map,
-            int x,
-            int y,
-            int dir,
+            Bot[] bots,
             (ImHashSet Cells, int CellsCount, int coordsHash) wrapped,
             ImHashSet pickedUpBoosterCoords,
             ImHashSet drilledCells,
-            (int, int)[] manipConfig,
             int manipulatorExtensionCount,
             int fastWheelsCount,
             int drillsCount,
             int teleportsCount,
-            int cloneCount,
-            int remainingSpeedBoostedMoves,
-            int remainingDrillMoves)
+            int cloneCount)
         {
             this.map = map;
-
-            this.bots = new[]
-            {
-                new Bot(x, y, dir, manipConfig, remainingSpeedBoostedMoves, remainingDrillMoves),
-            };
+            this.bots = bots;
 
             /*
             this.coordsHash = wrapped.coordsHash;
@@ -206,6 +201,8 @@
             }
 
             throw new ArgumentException(nameof(commands));
+
+            // return this.With()
         }
 
         private static (ImHashSet wrappedCells, int wrappedCellsCount, int coordsHash) UpdateWrappedCells(
@@ -265,20 +262,24 @@
 
             return new State(
                 this.map,
-                x ?? this.X,
-                y ?? this.Y,
-                dir ?? this.Dir,
+                bots: new[]
+                {
+                    new Bot(
+                        x: x ?? this.X,
+                        y: y ?? this.Y,
+                        dir: dir ?? this.Dir,
+                        manipConfig ?? this.ManipConfig,
+                        remainingSpeedBoostedMoves ?? (this.bots[0].RemainingSpeedBoostedMoves - timeCost),
+                        remainingDrillMoves ?? (this.bots[0].RemainingDrillMoves - timeCost)),
+                },
                 wrapped: wrapped,
                 pickedUpBoosterCoords ?? this.pickedUpBoosterCoords,
                 drilledCells ?? this.drilledCells,
-                manipConfig ?? this.ManipConfig,
                 manipulatorExtensionCount ?? this.manipulatorExtensionCount,
                 fastWheelsCount ?? this.fastWheelsCount,
                 drillsCount ?? this.drillsCount,
                 teleportsCount ?? this.teleportsCount,
-                cloneCount ?? this.cloneCount,
-                remainingSpeedBoostedMoves ?? (this.bots[0].RemainingSpeedBoostedMoves - timeCost),
-                remainingDrillMoves ?? (this.bots[0].RemainingDrillMoves - timeCost));
+                cloneCount ?? this.cloneCount);
         }
 
         private State? DoMove(Move move, int timeCost = 1)
