@@ -52,52 +52,41 @@ namespace Icfpc2019.Solution
                 }
             }
 
-            var rng = new Random(31337);
-            var outPts = new List<Point>(this.outsidePoints.OrderBy(x => rng.Next()));
+            var outPts = new List<Point>(this.outsidePoints);
+            var dx = new[] { 1, 0, -1, 0 };
+            var dy = new[] { 0, -1, 0, 1 };
 
             foreach (var currentPoint in outPts)
             {
-                var toLeft = currentPoint.X;
-                var toRight = this.tSize - 1 - currentPoint.X;
-                var toDown = currentPoint.Y;
-                var toUp = this.tSize - 1 - currentPoint.Y;
+                var queue = new Queue<Point>();
+                var prev = new Dictionary<Point, Point>();
+                var visited = new HashSet<Point>();
 
-                var tracePoint = currentPoint;
-                if (Math.Min(toLeft, toRight) < Math.Min(toDown, toUp))
+                queue.Enqueue(currentPoint);
+                visited.Add(currentPoint);
+
+                while (queue.Count > 0)
                 {
-                    if (toLeft < toRight)
+                    var cur = queue.Dequeue();
+                    if (cur.X <= 0 || cur.X >= this.tSize || cur.Y <= 0 || cur.Y >= this.tSize)
                     {
-                        while (tracePoint.X > 0)
+                        while (prev.ContainsKey(cur))
                         {
-                            --tracePoint.X;
-                            this.outsidePoints.Add(tracePoint);
+                            this.outsidePoints.Add(cur);
+                            cur = prev[cur];
                         }
+
+                        break;
                     }
-                    else
+
+                    for (var idx = 0; idx < 4; ++idx)
                     {
-                        while (tracePoint.X < this.tSize)
+                        var nextPoint = new Point { X = cur.X + dx[idx], Y = cur.Y + dy[idx] };
+                        if (!visited.Contains(nextPoint) && !this.insidePoints.Contains(nextPoint))
                         {
-                            ++tracePoint.X;
-                            this.outsidePoints.Add(tracePoint);
-                        }
-                    }
-                }
-                else
-                {
-                    if (toDown < toUp)
-                    {
-                        while (tracePoint.Y > 0)
-                        {
-                            --tracePoint.Y;
-                            this.outsidePoints.Add(tracePoint);
-                        }
-                    }
-                    else
-                    {
-                        while (tracePoint.Y < this.tSize)
-                        {
-                            ++tracePoint.Y;
-                            this.outsidePoints.Add(tracePoint);
+                            queue.Enqueue(nextPoint);
+                            prev[nextPoint] = cur;
+                            visited.Add(nextPoint);
                         }
                     }
                 }
@@ -127,7 +116,7 @@ namespace Icfpc2019.Solution
                 {
                     for (var y = 0; y < totalHeight; ++y)
                     {
-                        DrawRect(Brushes.White, x, y);
+                        DrawRect(Brushes.Bisque, x, y);
                     }
                 }
 
