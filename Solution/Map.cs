@@ -119,6 +119,7 @@
             }
 
             var (dx, dy) = (x2 - x1, y2 - y1);
+            var (dxSign, dySign) = (Math.Sign(dx), Math.Sign(dy));
             var (absDx, absDy) = (Math.Abs(dx), Math.Abs(dy));
 
             if (absDx <= 1 && absDy <= 1)
@@ -126,37 +127,43 @@
                 return true;
             }
 
-            if (dy == 2 && dx == 1)
+            var xIsMinor = absDx == 1;
+            var yIsMinor = absDy == 1;
+
+            if (!xIsMinor && !yIsMinor)
             {
-                return this.IsFree(x1, y1 + 1) && this.IsFree(x1 + 1, y1 + 1);
+                return false;
             }
 
-            if (dy == -2 && dx == 1)
+            var majorTotalDelta = xIsMinor ? absDy : absDx;
+
+            bool CheckOneCell(int minorDelta, int majorDelta)
             {
-                return this.IsFree(x1, y1 - 1) && this.IsFree(x1 + 1, y1 - 1);
+                if (xIsMinor)
+                {
+                    var x = x1 + (minorDelta * dxSign);
+                    var y = y1 + (majorDelta * dySign);
+                    return this.IsFree(x, y);
+                }
+                else
+                {
+                    var x = x1 + (majorDelta * dxSign);
+                    var y = y1 + (minorDelta * dySign);
+                    return this.IsFree(x, y);
+                }
             }
 
-            if (dy == 3 && dx == 1)
+            switch (majorTotalDelta)
             {
-                return this.IsFree(x1, y1 + 1) && this.IsFree(x1 + 1, y1 + 2);
+                case 2:
+                    return CheckOneCell(0, 1) && CheckOneCell(1, 1);
+                case 3:
+                    return CheckOneCell(0, 1) && CheckOneCell(1, 2);
+                case 4:
+                    return CheckOneCell(0, 1) && CheckOneCell(0, 2) && CheckOneCell(1, 2) && CheckOneCell(1, 3);
+                default:
+                    return false;
             }
-
-            if (dy == -3 && dx == 1)
-            {
-                return this.IsFree(x1, y1 - 1) && this.IsFree(x1 + 1, y1 - 2);
-            }
-
-            if (dy == 4 && dx == 1)
-            {
-                return this.IsFree(x1, y1 + 1) && this.IsFree(x1, y1 + 2) && this.IsFree(x1 + 1, y1 + 2) && this.IsFree(x1 + 1, y1 + 3);
-            }
-
-            if (dy == -4 && dx == 1)
-            {
-                return this.IsFree(x1, y1 - 1) && this.IsFree(x1, y1 - 2) && this.IsFree(x1 + 1, y1 - 2) && this.IsFree(x1 + 1, y1 - 3);
-            }
-
-            return false;
         }
 
         public override string ToString()
