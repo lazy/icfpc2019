@@ -103,6 +103,7 @@
         }
 
         public Map Map => this.map;
+        public int BotsCount => 1;
         public int X => this.x;
         public int Y => this.y;
         public int Dir => this.dir;
@@ -155,38 +156,51 @@
             return (sumVis, max);
         }
 
-        public State? Next(Command command)
+        public State? Next(params Command[] commands)
         {
-            switch (command)
+            if (commands.Length != this.BotsCount)
             {
-                case Move move:
-                    var newState = this.DoMove(move);
-
-                    if (newState?.remainingSpeedBoostedMoves >= 0)
-                    {
-                        newState = newState.DoMove(move, timeCost: 0) ?? newState;
-                    }
-
-                    return newState;
-                case Turn turn:
-                    return this.With(dir: (this.dir + turn.Ddir) & 3);
-                case UseManipulatorExtension useManip:
-                    return this.manipulatorExtensionCount <= 0
-                        ? null
-                        : this.AttachManip(useManip);
-                case UseFastWheels useFastWheels:
-                    return this.fastWheelsCount <= 0
-                        ? null
-                        : this.With(fastWheelsCount: this.fastWheelsCount - 1, remainingSpeedBoostedMoves: 50);
-                case UseDrill useDrill:
-                    return this.drillsCount <= 0
-                        ? null
-                        : this.With(drillsCount: this.drillsCount - 1, remainingDrillMoves: 30);
-                case Clone clone:
-                    throw new NotImplementedException();
-                default:
-                    throw new ArgumentOutOfRangeException(nameof(command), command.ToString());
+                return null;
             }
+
+            foreach (var command in commands)
+            {
+                switch (command)
+                {
+                    case null:
+                        // we expect that once commands for bot are over than nulls will be fed up indefinitely for it
+                        return this;
+                    case Move move:
+                        var newState = this.DoMove(move);
+
+                        if (newState?.remainingSpeedBoostedMoves >= 0)
+                        {
+                            newState = newState.DoMove(move, timeCost: 0) ?? newState;
+                        }
+
+                        return newState;
+                    case Turn turn:
+                        return this.With(dir: (this.dir + turn.Ddir) & 3);
+                    case UseManipulatorExtension useManip:
+                        return this.manipulatorExtensionCount <= 0
+                            ? null
+                            : this.AttachManip(useManip);
+                    case UseFastWheels useFastWheels:
+                        return this.fastWheelsCount <= 0
+                            ? null
+                            : this.With(fastWheelsCount: this.fastWheelsCount - 1, remainingSpeedBoostedMoves: 50);
+                    case UseDrill useDrill:
+                        return this.drillsCount <= 0
+                            ? null
+                            : this.With(drillsCount: this.drillsCount - 1, remainingDrillMoves: 30);
+                    case Clone clone:
+                        throw new NotImplementedException();
+                    default:
+                        throw new ArgumentOutOfRangeException(nameof(command), command.ToString());
+                }
+            }
+
+            throw new ArgumentException(nameof(commands));
         }
 
         private static (ImHashSet wrappedCells, int wrappedCellsCount, int coordsHash) UpdateWrappedCells(

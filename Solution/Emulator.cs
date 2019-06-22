@@ -10,19 +10,14 @@
         public static ExtendedSolution MakeExtendedSolution(Map map, IStrategy strategy) =>
             MakeExtendedSolution(map, strategy.Name, strategy.Solve(map));
 
-        public static ExtendedSolution MakeExtendedSolution(Map map, string strategyName, IEnumerable<Command>[] movesEnumerable)
+        public static ExtendedSolution MakeExtendedSolution(Map map, string strategyName, Command[][] moves)
         {
             try
             {
-                if (movesEnumerable.Length != 1)
-                {
-                    throw new NotImplementedException();
-                }
-
-                var moves = movesEnumerable.Single().ToArray();
-                var isValid = IsValidSolution(map, moves);
+                var (isValid, timeUnits) = IsValidSolution(map, moves);
                 return new ExtendedSolution(
                     isSuccessful: isValid,
+                    timeUnits: timeUnits,
                     comment: isValid ? "valid" : "invalid",
                     strategyName: strategyName,
                     gitCommitId: GitInfo.GitCommit,
@@ -40,23 +35,42 @@
             }
         }
 
-        public static bool IsValidSolution(Map map, IReadOnlyList<Command> moves)
+        public static (bool isValid, int? timeUnits) IsValidSolution(Map map, Command[][] commands)
         {
             State? state = new State(map);
-            var movesCount = 0;
+            var timeUnits = 0;
 
-            foreach (var move in moves)
+            var commandsPerBot = commands.Select(cmd => cmd.AsEnumerable().GetEnumerator()).ToArray();
+
+            while (true)
             {
-                state = state.Next(move);
-                if (state == null)
+                var stepCommands = new Command[state.BotsCount];
+                var hasCommands = false;
+                for (var i = 0; i < state.BotsCount; ++i)
                 {
-                    return false;
+                    if (commandsPerBot[i].MoveNext())
+                    {
+                        stepCommands[i] = commandsPerBot[i].Current;
+                        hasCommands = true;
+                    }
                 }
 
-                ++movesCount;
+                if (!hasCommands)
+                {
+                    break;
+                }
+
+                state = state.Next(stepCommands);
+                if (state == null)
+                {
+                    return (false, null);
+                }
+
+                ++timeUnits;
             }
 
-            return state.WrappedCellsCount == map.CellsToVisit.Count();
+            var isValid = state.WrappedCellsCount == map.CellsToVisit.Count();
+            return (isValid, isValid ? (int?)timeUnits : null);
         }
 
         private static class GitInfo

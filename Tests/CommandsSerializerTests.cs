@@ -52,9 +52,7 @@
 
         private static void TestSerialization(string serializedMoves, params Command[][] commands)
         {
-            var parsedMoves = CommandsSerializer.Parse(serializedMoves)
-                .Select(botCommands => botCommands.ToArray())
-                .ToArray();
+            var parsedMoves = CommandsSerializer.Parse(serializedMoves);
             var serializedBackMoves = CommandsSerializer.Serialize(commands);
 
             Assert.Equal(commands, parsedMoves);

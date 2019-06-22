@@ -120,8 +120,8 @@
             this.removeTurns ? "RT" : "KT",
             this.numVisCoeff);
 
-        public IEnumerable<Command>[] Solve(Map map) =>
-            new[] { this.Solve1(map) };
+        public Command[][] Solve(Map map) =>
+            new[] { this.Solve1(map).ToArray() };
 
         public IEnumerable<Command> Solve1(Map map)
         {

@@ -12,13 +12,14 @@
     {
         public ExtendedSolution(
             bool isSuccessful,
+            int? timeUnits,
             string comment,
             string strategyName,
             string gitCommitId,
-            IReadOnlyList<Command> moves)
+            Command[][] moves)
             : this(
                 isSuccessful,
-                isSuccessful ? moves.Count() : (int?)null,
+                timeUnits,
                 comment,
                 strategyName,
                 gitCommitId,
