@@ -44,12 +44,24 @@
             var bfsQueue = new Queue<(int, int, int)>();
             var bfsPath = new List<Command>();
 
+            var distsFromCenter = new DistsFromCenter(state);
+            var distsFromCenterTimer = 0;
+            var distsFromCenterTimerResetPeriod = Math.Max(10, map.CellsToVisit.Count() / 10);
+
             // for debugging purposes
             // var history = new List<(Command, State)>();
             Command Next(Command cmd)
             {
-                var newState = state.Next(cmd);
-                state = newState ?? throw new InvalidOperationException("Generated invalid move!");
+                var newState = state.Next(cmd) ?? throw new InvalidOperationException("Generated invalid move!");
+                var wrappedDiff = newState.WrappedCellsCount - state.WrappedCellsCount;
+                state = newState;
+
+                distsFromCenterTimer += wrappedDiff;
+                if (distsFromCenterTimer >= distsFromCenterTimerResetPeriod)
+                {
+                    distsFromCenter = new DistsFromCenter(state);
+                    distsFromCenterTimer = 0;
+                }
 
                 // history.Add((cmd, state));
                 return cmd;
@@ -57,7 +69,7 @@
 
             while (state.WrappedCellsCount != map.CellsToVisit.Count)
             {
-                Bfs();
+                Bfs(distsFromCenter);
 
                 for (var i = 0; i < bfsPath.Count; ++i)
                 {
@@ -122,7 +134,7 @@
                 var beam = new StablePriorityQueue<WeightedState>(BeamSize + 1);
                 var seenStates = new HashSet<int>();
 
-                var startState = new WeightedState(state, null);
+                var startState = new WeightedState(state, null, distsFromCenter);
                 beam.Enqueue(startState, startState.CalcPriority(state.X, state.Y));
 
                 var bestState = (WeightedState?)null;
@@ -151,7 +163,7 @@
                                 if (beam.Count < BeamSize ||
                                     nextState.WrappedCellsCount > beam.First.State.WrappedCellsCount)
                                 {
-                                    var nextWeightedState = new WeightedState(nextState, (prevState, command));
+                                    var nextWeightedState = new WeightedState(nextState, (prevState, command), distsFromCenter);
                                     beam.Enqueue(nextWeightedState, nextWeightedState.CalcPriority(state.X, state.Y));
 
                                     // remove worst states
@@ -161,8 +173,8 @@
                                     }
 
                                     // update the global best state if possible
-                                    if (nextState.WrappedCellsCount > curWrappedCount &&
-                                        (bestState == null || nextState.WrappedCellsCount > bestState.State.WrappedCellsCount))
+                                    if (nextState.WrappedCellsCount >= curWrappedCount &&
+                                        (bestState == null || nextWeightedState.CalcPriority(state.X, state.Y) > bestState.CalcPriority(state.X, state.Y)))
                                     {
                                         bestState = nextWeightedState;
                                     }
@@ -191,7 +203,7 @@
                 return firstCommand;
             }
 
-            void Bfs()
+            void Bfs(DistsFromCenter distsFromCenter)
             {
                 ++generation;
                 bfsQueue.Clear();
@@ -221,14 +233,14 @@
                     }
 
                     // path found
-                    if (state.UnwrappedVisible(x, y, dir))
+                    if (state.UnwrappedVisible(x, y, dir, distsFromCenter))
                     {
                         if (maxDepth == null)
                         {
                             maxDepth = depth + 5;
                         }
 
-                        var distFromCenter = state.MaxUnwrappedVisibleDistFromCenter(x, y, dir);
+                        var distFromCenter = state.MaxUnwrappedVisibleDistFromCenter(x, y, dir, distsFromCenter);
                         if (bestDest == null || distFromCenter > bestDest.Value.distFromCenter)
                         {
                             bestDest = (x, y, dir, distFromCenter);
@@ -328,12 +340,12 @@
 
         private class WeightedState : StablePriorityQueueNode
         {
-            public WeightedState(State state, (WeightedState, Command)? prev)
+            public WeightedState(State state, (WeightedState, Command)? prev, DistsFromCenter distsFromCenter)
             {
                 this.State = state;
                 this.Prev = prev;
                 this.BestVisibleCount = Math.Max(
-                    this.State.MaxUnwrappedVisibleDistFromCenter(this.State.X, this.State.Y, this.State.Dir),
+                    this.State.MaxUnwrappedVisibleDistFromCenter(this.State.X, this.State.Y, this.State.Dir, distsFromCenter),
                     this.Prev?.state?.BestVisibleCount ?? 0);
             }
 
@@ -345,7 +357,8 @@
                 (128 * this.BestVisibleCount) +
                 (8 * this.State.WrappedCellsCount) +
                 (0 * Math.Abs(this.State.X - startX)) +
-                (0 * Math.Abs(this.State.Y - startY));
+                (0 * Math.Abs(this.State.Y - startY)) +
+                ((0.01f * this.State.Hash) / int.MaxValue);
         }
     }
 

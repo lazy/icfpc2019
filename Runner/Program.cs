@@ -28,6 +28,7 @@
 
             Parallel.ForEach(
                 Directory.EnumerateFiles("Data/maps", "*.desc").Reverse(),
+                new ParallelOptions { MaxDegreeOfParallelism = -1 },
                 mapFile =>
                 {
                     var log = new List<string>();

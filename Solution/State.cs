@@ -106,6 +106,7 @@
             // Debug.Assert(this.wrappedCellsCount == this.wrappedCells.Enumerate().Count(), "Counts do not match!");
         }
 
+        public Map Map => this.map;
         public int X => this.x;
         public int Y => this.y;
         public int Dir => this.dir;
@@ -129,10 +130,10 @@
 
         public bool IsWrapped(int x, int y) => this.wrappedCells.TryFind((x, y), out var _);
 
-        public bool UnwrappedVisible(int x, int y, int dir) =>
-            this.MaxUnwrappedVisibleDistFromCenter(x, y, dir) != 0;
+        public bool UnwrappedVisible(int x, int y, int dir, DistsFromCenter dists) =>
+            this.MaxUnwrappedVisibleDistFromCenter(x, y, dir, dists) != 0;
 
-        public int MaxUnwrappedVisibleDistFromCenter(int x, int y, int dir)
+        public int MaxUnwrappedVisibleDistFromCenter(int x, int y, int dir, DistsFromCenter dists)
         {
             var max = 0;
             foreach (var delta in this.manipConfig)
@@ -142,10 +143,10 @@
                 var manipCoord = (x + dx, y + dy);
                 if (this.map.IsFree(x + dx, y + dy) &&
                     !this.wrappedCells.TryFind(manipCoord, out var _) &&
-                    this.map.GetDistFromCenter(x + dx, y + dy) > max &&
+                    dists.GetDist(x + dx, y + dy) > max &&
                     this.map.AreVisible(x, y, x + dx, y + dy))
                 {
-                    max = this.map.GetDistFromCenter(x + dx, y + dy);
+                    max = dists.GetDist(x + dx, y + dy);
                 }
             }
 
