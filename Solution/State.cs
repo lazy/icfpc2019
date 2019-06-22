@@ -3,6 +3,7 @@
     using System;
     using System.Diagnostics;
     using System.Runtime.CompilerServices;
+    using System.Runtime.InteropServices;
     using System.Threading;
 
     // Key doesn't really matter
@@ -51,7 +52,7 @@
                         remainingSpeedBoostedMoves: 0,
                         remainingDrillMoves: 0),
                 },
-                wrapped: UpdateWrappedCells(map, map.StartX, map.StartY, 0, InitManipConfig, ImHashSet.Empty, 0, 0),
+                wrapped: UpdateWrappedCells(map, map.StartX, map.StartY, 0, InitManipConfig, ImHashSet.Empty, 0),
                 pickedUpBoosterCoords: ImHashSet.Empty,
                 drilledCells: ImHashSet.Empty,
                 manipulatorExtensionCount: 0,
@@ -65,7 +66,7 @@
         private State(
             Map map,
             Bot[] bots,
-            (ImHashSet Cells, int CellsCount, int coordsHash) wrapped,
+            (ImHashSet Cells, int CellsCount) wrapped,
             ImHashSet pickedUpBoosterCoords,
             ImHashSet drilledCells,
             int manipulatorExtensionCount,
@@ -218,7 +219,7 @@
             return new State(
                 map: this.map,
                 bots: newBots,
-                wrapped: (newWrappedCells, newWrappedCellsCount, 0),
+                wrapped: (newWrappedCells, newWrappedCellsCount),
                 pickedUpBoosterCoords: newPickedUpBoosterCoords,
                 drilledCells: newDrilledCells,
                 manipulatorExtensionCount: newManipulatorExtensionCount,
@@ -229,15 +230,14 @@
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private static (ImHashSet wrappedCells, int wrappedCellsCount, int coordsHash) UpdateWrappedCells(
+        private static (ImHashSet wrappedCells, int wrappedCellsCount) UpdateWrappedCells(
             Map map,
             int x,
             int y,
             int dir,
             (int, int)[] manipConfig,
             ImHashSet wrappedCells,
-            int wrappedCellsCount,
-            int coordsHash)
+            int wrappedCellsCount)
         {
             foreach (var delta in manipConfig)
             {
@@ -253,7 +253,7 @@
                 }
             }
 
-            return (wrappedCells, wrappedCellsCount, coordsHash);
+            return (wrappedCells, wrappedCellsCount);
         }
 
         public class Bot
@@ -363,6 +363,15 @@
                     return null;
                 }
 
+                (newWrappedCells, newWrappedCellsCount) = UpdateWrappedCells(
+                    state.Map,
+                    newX,
+                    newY,
+                    this.Dir,
+                    this.ManipConfig,
+                    newWrappedCells,
+                    newWrappedCellsCount);
+
                 return this.With(x: newX, y: newY);
             }
 
@@ -373,8 +382,18 @@
                 ref ImHashSet newWrappedCells,
                 ref int newWrappedCellsCount)
             {
-                // this.With(dir: (this.Dir + turn.Ddir) & 3)
-                throw new NotImplementedException();
+                var newDir = (this.Dir + turn.Ddir) & 3;
+
+                (newWrappedCells, newWrappedCellsCount) = UpdateWrappedCells(
+                    state.Map,
+                    this.X,
+                    this.Y,
+                    newDir,
+                    this.ManipConfig,
+                    newWrappedCells,
+                    newWrappedCellsCount);
+
+                return this.With(dir: newDir);
             }
 
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -416,6 +435,15 @@
                 var newManipConfig = new (int, int)[this.ManipConfig.Length + 1];
                 Array.Copy(this.ManipConfig, newManipConfig, this.ManipConfig.Length);
                 newManipConfig[this.ManipConfig.Length] = (dx, dy);
+
+                (newWrappedCells, newWrappedCellsCount) = UpdateWrappedCells(
+                    state.Map,
+                    this.X,
+                    this.Y,
+                    this.Dir,
+                    newManipConfig,
+                    newWrappedCells,
+                    newWrappedCellsCount);
 
                 return this.With(manipConfig: newManipConfig);
             }
