@@ -67,11 +67,46 @@ namespace Icfpc2019.Solution
 
             this.CollectContourPoints();
 
-            if (this.contourPoints.Count <= this.vMin)
+            var missingPoints = this.vMin - this.contourPoints.Count;
+            while (missingPoints > 0)
             {
-                for (var iter = 0; iter < this.vMin - this.contourPoints.Count; ++iter)
+                var pp = new List<Point>(this.outsidePoints);
+                foreach (var p in pp.Take(5))
                 {
-                    this.ConnectPointWithBoundary(this.SelectRandomPoint(null, this.tSize, this.tSize));
+                    var stepUp = true;
+                    var current = p;
+                    var done = false;
+                    while (!done)
+                    {
+                        var nextPoints = new List<Point>();
+                        for (var dx = 0; !done && dx < 4; ++dx)
+                        {
+                            for (var dy = -1; dy <= 1; ++dy)
+                            {
+                                var cc = new Point { X = current.X + dx, Y = current.Y + dy };
+                                if (p != cc && dx > 0 &&
+                                    (!this.GoodXy(cc.X, cc.Y) || this.outsidePoints.Contains(cc) || this.insidePoints.Contains(cc)))
+                                {
+                                    done = true;
+                                    break;
+                                }
+
+                                if (dx < 3 && dy == 0)
+                                {
+                                    nextPoints.Add(cc);
+                                }
+                            }
+                        }
+
+                        if (!done)
+                        {
+                            this.outsidePoints.UnionWith(nextPoints);
+                            current.X += 2;
+                            current.Y += stepUp ? 1 : -1;
+                            stepUp = !stepUp;
+                            missingPoints -= 2;
+                        }
+                    }
                 }
             }
 
@@ -126,18 +161,15 @@ namespace Icfpc2019.Solution
             string FmtPoint(Point p) => $"({p.X},{p.Y})";
             var contourPointsStr = string.Join(',', this.contourPoints.Select(FmtPoint));
 
-            var selectedPoints = new HashSet<Point>();
-            var contourAllPoints = new AllPoints();
-            foreach (var p in this.contourPoints)
-            {
-                contourAllPoints.Update(p);
-            }
+            var mapTemplate = MapParser.Parse($"{contourPointsStr}#(0,0)##");
+            var freePoints = mapTemplate.CellsToVisit.Select(p => new Point { X = p.Item1 - 1, Y = p.Item2 - 1 }).ToList();
+            var freePointIndex = 0;
 
-            var startPos = this.SelectRandomPoint(selectedPoints, contourAllPoints.MaxX, contourAllPoints.MaxY);
+            var startPos = freePoints[freePointIndex++];
 
             var boosters = new StringBuilder();
 
-            void SelectBoosters(char sym, int count)
+            void SelectBoosters(char sym, int count, ref int idx)
             {
                 for (var i = 0; i < count; ++i)
                 {
@@ -146,17 +178,17 @@ namespace Icfpc2019.Solution
                         boosters.Append(';');
                     }
 
-                    var boosterPoint = this.SelectRandomPoint(selectedPoints, contourAllPoints.MaxX, contourAllPoints.MaxY);
+                    var boosterPoint = freePoints[idx++];
                     boosters.Append($"{sym}{FmtPoint(boosterPoint)}");
                 }
             }
 
-            SelectBoosters('B', this.mNum);
-            SelectBoosters('F', this.fNum);
-            SelectBoosters('L', this.dNum);
-            SelectBoosters('R', this.rNum);
-            SelectBoosters('C', this.cNum);
-            SelectBoosters('X', this.xNum);
+            SelectBoosters('B', this.mNum, ref freePointIndex);
+            SelectBoosters('F', this.fNum, ref freePointIndex);
+            SelectBoosters('L', this.dNum, ref freePointIndex);
+            SelectBoosters('R', this.rNum, ref freePointIndex);
+            SelectBoosters('C', this.cNum, ref freePointIndex);
+            SelectBoosters('X', this.xNum, ref freePointIndex);
 
             return $"{contourPointsStr}#{FmtPoint(startPos)}##{boosters}";
         }
