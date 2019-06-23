@@ -121,7 +121,6 @@
                 catch (Exception ex)
                 {
                     Console.Error.WriteLine($"Something is wrong: {ex}!");
-                    Console.Error.WriteLine($"Things went south at: {ex.StackTrace}");
                 }
 
                 Console.WriteLine("Sleeping before attempting again");
