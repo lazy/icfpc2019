@@ -13,7 +13,7 @@
     public class Program
     {
         // For debugging
-        private static readonly int? StrategiesLimit = 50;
+        private static readonly int? StrategiesLimit = 20;
         private static readonly bool LogImmediately = false;
 
         public static void Main(string[] args)
@@ -30,7 +30,7 @@
 
             Parallel.ForEach(
                 Directory.EnumerateFiles("Data/maps", "*.desc"),
-                new ParallelOptions { MaxDegreeOfParallelism = -1 },
+                new ParallelOptions { MaxDegreeOfParallelism = 8 },
                 mapFile =>
                 {
                     var log = new List<string>();
