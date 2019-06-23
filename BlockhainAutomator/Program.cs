@@ -1,7 +1,6 @@
 ﻿namespace BlockhainAutomator
 {
     using System;
-    using System.Collections.Generic;
     using System.Diagnostics;
     using System.IO;
     using System.Linq;
@@ -12,7 +11,6 @@
     using Icfpc2019.Solution;
     using Icfpc2019.Solution.Strategies;
 
-    using Newtonsoft.Json;
     using Newtonsoft.Json.Linq;
 
     public class Program
