@@ -68,7 +68,7 @@ namespace Icfpc2019.Solution
             {
                 for (var iter = 0; iter < this.vMin - this.contourPoints.Count; ++iter)
                 {
-                    this.ConnectPointWithBoundary(this.SelectRandomPoint(null));
+                    this.ConnectPointWithBoundary(this.SelectRandomPoint(null, this.tSize, this.tSize));
                 }
             }
 
@@ -124,7 +124,13 @@ namespace Icfpc2019.Solution
             var contourPointsStr = string.Join(',', this.contourPoints.Select(FmtPoint));
 
             var selectedPoints = new HashSet<Point>();
-            var startPos = this.SelectRandomPoint(selectedPoints);
+            var contourAllPoints = new AllPoints();
+            foreach (var p in this.contourPoints)
+            {
+                contourAllPoints.Update(p);
+            }
+
+            var startPos = this.SelectRandomPoint(selectedPoints, contourAllPoints.MaxX, contourAllPoints.MaxY);
 
             var boosters = new StringBuilder();
 
@@ -137,7 +143,7 @@ namespace Icfpc2019.Solution
                         boosters.Append(';');
                     }
 
-                    var boosterPoint = this.SelectRandomPoint(selectedPoints);
+                    var boosterPoint = this.SelectRandomPoint(selectedPoints, contourAllPoints.MaxX, contourAllPoints.MaxY);
                     boosters.Append($"{sym}{FmtPoint(boosterPoint)}");
                 }
             }
@@ -157,14 +163,14 @@ namespace Icfpc2019.Solution
             return new Point { X = p.X - 1, Y = p.Y - 1 };
         }
 
-        private Point SelectRandomPoint(HashSet<Point>? alreadySelected)
+        private Point SelectRandomPoint(HashSet<Point>? alreadySelected, int maxX, int maxY)
         {
             while (true)
             {
                 var rndPoint = new Point
                 {
-                    X = this.rng.Next(this.tSize),
-                    Y = this.rng.Next(this.tSize),
+                    X = this.rng.Next(maxY),
+                    Y = this.rng.Next(maxY),
                 };
                 if (!this.outsidePoints.Contains(rndPoint) && !this.insidePoints.Contains(rndPoint))
                 {
