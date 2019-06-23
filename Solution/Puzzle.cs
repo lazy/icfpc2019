@@ -17,7 +17,7 @@ namespace Icfpc2019.Solution
         private readonly HashSet<Point> contourPoints = new HashSet<Point>();
         private readonly HashSet<Point> insidePoints = new HashSet<Point>();
         private readonly HashSet<Point> outsidePoints = new HashSet<Point>();
-        private readonly Random rng = new Random(31337);
+        private readonly Random rng = new Random(3133337);
         private int cNum;
         private int dNum;
         private int fNum;
