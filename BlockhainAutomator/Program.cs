@@ -102,24 +102,36 @@
                 var rng = new Random();
                 strategies = strategies.OrderBy(s => rng.Next()).ToArray();
 
-                var map = MapParser.Parse(taskText);
-                var solutions = strategies.AsParallel()
-                    .Select(strategy => Emulator.MakeExtendedSolution(map, strategy));
-
-                // Block lives for 15 minutes, lets try to solve everything by 14:30
-                var blockLifetimeMs = ((15 * 60) - 30) * 1000;
+                // Block lives for 15 minutes, lets try to solve everything by 14:00
+                var blockLifetimeMs = 14 * 60 * 1000;
                 var timeToSolve = blockLifetimeMs - blockAge.TotalMilliseconds;
                 Console.WriteLine($"Time to solve: {timeToSolve} ms");
+
+                var map = MapParser.Parse(taskText);
+                var solutions = strategies.AsParallel().WithDegreeOfParallelism(10)
+                    .Select(
+                        strategy =>
+                        {
+                            var run = false;
+                            lock (sw)
+                            {
+                                run = sw.ElapsedMilliseconds < timeToSolve;
+                            }
+
+                            return run
+                                ? Emulator.MakeExtendedSolution(map, strategy)
+                                : Emulator.MakeExtendedSolution(map, "fail", new Command[][] { });
+                        });
 
                 var numTried = 0;
                 foreach (var sln in solutions)
                 {
-                    ++numTried;
-                    sln.SaveIfBetter(extSolutionFile);
-                    if (sw.ElapsedMilliseconds > timeToSolve)
+                    if (sln.IsSuccessful)
                     {
-                        break;
+                        ++numTried;
                     }
+
+                    sln.SaveIfBetter(extSolutionFile);
                 }
 
                 Console.WriteLine($" Solution took: {sw.ElapsedMilliseconds} ms, {numTried} strategies out of {strategies.Length} tried");
