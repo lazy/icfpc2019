@@ -6,6 +6,7 @@
     using System.IO;
     using System.Linq;
     using System.Net.Http;
+    using System.Threading;
     using System.Threading.Tasks;
 
     using Icfpc2019.Solution;
@@ -39,7 +40,7 @@
             return JObject.Parse(rawResponse);
         }
 
-        private static async Task MainAsync(string[] args)
+        private static async Task SolveCurrentBlockAsync()
         {
             var metaInfo = await FetchApiAsync("getblockchaininfo", null);
             var blockNum = metaInfo["block"].Value<int>();
@@ -108,9 +109,24 @@
             Console.WriteLine($"Now run: lambda-cli.py submit {blockNum} {Path.GetFullPath(solutionFile)} {Path.GetFullPath(puzzleSolutionFile)}");
         }
 
-        private static void Main(string[] args)
+        private static void Main()
         {
-            MainAsync(args).GetAwaiter().GetResult();
+            while (true)
+            {
+                Console.WriteLine("Solving the current block");
+                try
+                {
+                    SolveCurrentBlockAsync().GetAwaiter().GetResult();
+                }
+                catch (Exception ex)
+                {
+                    Console.Error.WriteLine($"Something is wrong: {ex}!");
+                    Console.Error.WriteLine($"Things went south at: {ex.StackTrace}");
+                }
+
+                Console.WriteLine("Sleeping before attempting again");
+                Thread.Sleep(TimeSpan.FromSeconds(25));
+            }
         }
 
         private static string FindSolutionDir()
