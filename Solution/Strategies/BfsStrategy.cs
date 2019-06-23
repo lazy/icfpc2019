@@ -34,22 +34,6 @@
 
     public class BfsStrategy : IStrategy
     {
-        private const int BeamSize = 64;
-        private const int BeamSearchDepth = 10;
-
-        private static readonly Command[] BeamSearchCommands =
-        {
-            Move.Up,
-            Move.Down,
-            Move.Left,
-            Move.Right,
-            Turn.Left,
-            Turn.Right,
-
-            // TODO: fix BFS to support it
-            // UseFastWheels.Instance,
-        };
-
         private readonly ManipulatorGrowthStrategy manipStrategy;
         private readonly int recalcDistsFromCenterCount;
         private readonly int bfsExtraDepth;
@@ -131,7 +115,7 @@
                     continue;
                 }
 
-                for (var i = 0; i < bfs.Path.Count; ++i)
+                foreach (var cmd in bfs.Path)
                 {
                     // During walking we've found extension thingy - let's take it then!
                     if (state.HaveManipulatorExtensions())
@@ -140,108 +124,8 @@
                         break;
                     }
 
-                    var bfsCommand = bfs.Path[i];
-
-                    if (i >= bfs.Path.Count - 10)
-                    {
-                        // If close to bfs finish - try looking for optimal solution with beam search
-                        var command = TryBeamSearch();
-                        if (command != null && !command.Equals(bfsCommand))
-                        {
-                            // found a command that is different from bfs path, it invalidates bfs
-                            // Console.WriteLine($"    BS: {command}, bfs[{i}/{bfs.Path.Count}]: {bfsCommand}");
-                            yield return Next(command);
-                            break;
-                        }
-                    }
-
-                    // just go according to bfs
-                    // Console.WriteLine($"        bfs[{i}/{bfs.Path.Count}]: {bfsCommand}");
-                    yield return Next(bfsCommand);
+                    yield return Next(cmd);
                 }
-            }
-
-            // just call it to silence compiler
-            TryBeamSearchImpl();
-
-            yield break;
-
-            Command? TryBeamSearch() => null; // TryBeamSearchImpl();
-
-            Command? TryBeamSearchImpl()
-            {
-                var bot = state.GetBot(0);
-                var curWrappedCount = state.WrappedCellsCount;
-                var beam = new StablePriorityQueue<WeightedState>(BeamSize + 1);
-                var seenStates = new HashSet<int>();
-
-                var startState = new WeightedState(state, null, distsFromCenter);
-                beam.Enqueue(startState, startState.CalcPriority(bot.X, bot.Y));
-
-                var bestState = (WeightedState?)null;
-
-                // var numCollisions = 0
-                for (var depth = 0; depth < BeamSearchDepth; ++depth)
-                {
-                    var prevBeam = beam.ToArray();
-                    beam.Clear();
-
-                    foreach (var prevState in prevBeam)
-                    {
-                        foreach (var command in BeamSearchCommands)
-                        {
-                            var nextState = prevState.State.Next(command);
-
-                            if (nextState != null)
-                            {
-                                if (seenStates.Contains(nextState.Hash))
-                                {
-                                    // ++numCollisions;
-                                    continue;
-                                }
-
-                                seenStates.Add(nextState.Hash);
-                                if (beam.Count < BeamSize ||
-                                    nextState.WrappedCellsCount > beam.First.State.WrappedCellsCount)
-                                {
-                                    var nextWeightedState = new WeightedState(nextState, (prevState, command), distsFromCenter);
-                                    beam.Enqueue(nextWeightedState, nextWeightedState.CalcPriority(bot.X, bot.Y));
-
-                                    // remove worst states
-                                    if (beam.Count > BeamSize)
-                                    {
-                                        beam.Dequeue();
-                                    }
-
-                                    // update the global best state if possible
-                                    if (nextState.WrappedCellsCount >= curWrappedCount &&
-                                        (bestState == null || nextWeightedState.CalcPriority(bot.X, bot.Y) > bestState.CalcPriority(bot.X, bot.Y)))
-                                    {
-                                        bestState = nextWeightedState;
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
-
-                // Console.WriteLine($"Collisions: {numCollisions}")
-                if (bestState == null)
-                {
-                    return null;
-                }
-
-                // Scroll back until first command is found
-                var firstCommand = (Command?)null;
-                var cur = bestState;
-                while (cur.Prev != null)
-                {
-                    var (prev, command) = cur.Prev.Value;
-                    firstCommand = command;
-                    cur = prev;
-                }
-
-                return firstCommand;
             }
 
             void Bfs(DistsFromCenter distsFromCenter)
@@ -347,30 +231,6 @@
                     }
                 }
             }
-        }
-
-        private class WeightedState : StablePriorityQueueNode
-        {
-            public WeightedState(State state, (WeightedState, Command)? prev, DistsFromCenter distsFromCenter)
-            {
-                var bot = state.GetBot(0);
-                this.State = state;
-                this.Prev = prev;
-                this.BestVisibleCount = Math.Max(
-                    this.State.MaxUnwrappedVisibleDistFromCenter(bot.X, bot.Y, bot.Dir, distsFromCenter).maxDist,
-                    this.Prev?.state?.BestVisibleCount ?? 0);
-            }
-
-            public State State { get; }
-            public (WeightedState state, Command command)? Prev { get; }
-            public int BestVisibleCount { get; }
-
-            public float CalcPriority(int startX, int startY) =>
-                (128 * this.BestVisibleCount) +
-                (8 * this.State.WrappedCellsCount) +
-                (0 * Math.Abs(this.State.GetBot(0).X - startX)) +
-                (0 * Math.Abs(this.State.GetBot(0).Y - startY)) +
-                ((0.01f * this.State.Hash) / int.MaxValue);
         }
     }
 }
