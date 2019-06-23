@@ -22,8 +22,15 @@
             Move.Down,
         };
 
-        public Command[][] Solve(State state) =>
-            new[] { this.Solve1(state.Map).ToArray() };
+        public Command[][] Solve(State state)
+        {
+            if (state.BotsCount > 1)
+            {
+                throw new Exception("This strategy works only with 1 bot");
+            }
+
+            return new[] { this.Solve1(state.Map).ToArray() };
+        }
 
         public IEnumerable<Command> Solve1(Map map)
         {

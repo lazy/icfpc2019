@@ -76,7 +76,7 @@
             if (!File.Exists(extSolutionFile))
             {
                 Console.WriteLine("Solving task");
-                var strategies = LookAheadFactory.MakeStrategies().Concat(new[] { new DumbBfs(), }).ToArray();
+                var strategies = StrategyFactory.GenerateStrategies().ToArray();
                 var map = MapParser.Parse(taskText);
                 var solutions = strategies.AsParallel()
                     .Select(strategy => Emulator.MakeExtendedSolution(map, strategy))
