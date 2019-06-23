@@ -153,8 +153,22 @@
 
         public bool IsPickedUp(int x, int y) => this.pickedUpBoosterCoords.TryFind((x, y), out var _);
 
-        public bool UnwrappedVisible(int x, int y, int dir, DistsFromCenter dists) =>
-            this.MaxUnwrappedVisibleDistFromCenter(x, y, dir, dists).Item1 != 0;
+        public bool UnwrappedCellsVisible(int x, int y, int dir)
+        {
+            foreach (var delta in this.bots[0].ManipConfig)
+            {
+                var (dx, dy) = TurnManip(dir, delta);
+                var manipCoord = (x + dx, y + dy);
+                if (this.map.IsFree(x + dx, y + dy) &&
+                    !this.wrappedCells.TryFind(manipCoord, out var _) &&
+                    this.map.AreVisible(x, y, x + dx, y + dy))
+                {
+                    return true;
+                }
+            }
+
+            return false;
+        }
 
         public (int numVis, int maxDist) MaxUnwrappedVisibleDistFromCenter(int x, int y, int dir, DistsFromCenter dists)
         {

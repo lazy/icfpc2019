@@ -21,6 +21,16 @@
             Move.Up,
             Move.Down,
         };
+
+        private readonly bool enableExtensions;
+
+        public DumbBfs(bool enableExtensions = true)
+        {
+            this.enableExtensions = enableExtensions;
+        }
+
+        public string Name => $"{nameof(DumbBfs)}{(this.enableExtensions ? string.Empty : "NoExt")}";
+
         public IEnumerable<Command[]> Solve(State state)
         {
             if (state.BotsCount > 1)
@@ -48,7 +58,7 @@
             {
                 if (map.IsFree(startPoint.X, startPoint.Y))
                 {
-                    if (map[startPoint.X, startPoint.Y] == Map.Cell.ManipulatorExtension)
+                    if (this.enableExtensions && map[startPoint.X, startPoint.Y] == Map.Cell.ManipulatorExtension)
                     {
                         if (positiveExtension == negativeExtension)
                         {

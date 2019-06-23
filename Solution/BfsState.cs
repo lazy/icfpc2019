@@ -1,5 +1,6 @@
 ﻿namespace Icfpc2019.Solution
 {
+    using System;
     using System.Collections;
     using System.Collections.Generic;
     using System.Diagnostics;
@@ -19,17 +20,22 @@
         public Queue<(int, int, int)> Queue { get; }
         public List<Command> Path { get; }
 
-        public void FindBackwardPath(int x, int y, int dir, State.Bot bot)
+        public void FindBackwardPath(int x, int y, int dir, State.Bot bot, Move[] moves)
         {
             this.Path.Clear();
             while ((x, y, dir) != (bot.X, bot.Y, bot.Dir))
             {
+                if (this.Nodes[x, y, dir].Generation != this.Generation)
+                {
+                    throw new Exception("ooops");
+                }
+
                 Debug.Assert(this.Nodes[x, y, dir].Generation == this.Generation, "oops");
 
                 var moveIdx = this.Nodes[x, y, dir].MoveIdx;
                 if (moveIdx >= 0)
                 {
-                    var move = Move.All[moveIdx];
+                    var move = moves[moveIdx];
                     this.Path.Add(move);
                     x -= move.Dx;
                     y -= move.Dy;
@@ -44,6 +50,9 @@
 
             this.Path.Reverse();
         }
+
+        public void FindBackwardPath(int x, int y, int dir, State.Bot bot) =>
+            this.FindBackwardPath(x, y, dir, bot, Move.All);
 
         public struct Node
         {
