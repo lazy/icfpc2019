@@ -28,6 +28,7 @@ namespace Icfpc2019.Solution
         private int vMax;
         private int vMin;
         private int xNum;
+        private int rngCallCount = 0;
 
         public Puzzle(string description, int seed)
         {
@@ -291,6 +292,12 @@ namespace Icfpc2019.Solution
                     X = this.rng.Next(maxY),
                     Y = this.rng.Next(maxY),
                 };
+                ++this.rngCallCount;
+                if (this.rngCallCount >= 1000000)
+                {
+                    throw new Exception("Too many random point generations");
+                }
+
                 if (!this.outsidePoints.Contains(rndPoint) && !this.insidePoints.Contains(rndPoint))
                 {
                     if (alreadySelected != null)
@@ -314,8 +321,16 @@ namespace Icfpc2019.Solution
             this.contourPoints.Add(startPoint);
             var curContour = startPoint;
 
+            var steps = 0;
+
             while (true)
             {
+                ++steps;
+                if (steps >= this.tSize * this.tSize)
+                {
+                    throw new Exception("Tracing the contour exceeded the step limit");
+                }
+
                 var nextX = curContour.X + dx[dir];
                 var nextY = curContour.Y + dy[dir];
                 var nextContour = new Point { X = nextX, Y = nextY };

@@ -34,16 +34,10 @@ namespace Icfpc2019.Tests
         {
             for (var bn = 3; bn <= 45; ++bn)
             {
-                if (bn == 39)
-                {
-                    // The puzzle solver hangs on this one :(
-                    continue;
-                }
-
-                var puzzle = new Puzzle(File.ReadAllText($@"..\..\..\..\Data\blocks\{bn}\puzzle.cond"), 3133337);
-                var map = $@"..\..\..\..\Data\blocks\{bn}\puzzle.cond.desc";
                 try
                 {
+                    var puzzle = new Puzzle(File.ReadAllText($@"..\..\..\..\Data\blocks\{bn}\puzzle.cond"), 3133337);
+                    var map = $@"..\..\..\..\Data\blocks\{bn}\puzzle.cond.desc";
                     puzzle.EnsureMapIsValid(map);
                     this.testOutputHelper.WriteLine($"VALID puzzle solution for block #{bn}");
                 }
