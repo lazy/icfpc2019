@@ -2,11 +2,14 @@
 {
     using System;
     using System.Collections.Generic;
+    using System.Data;
+
+    using Microsoft.VisualBasic;
 
     public class DumbLookAheadBfs : IStrategy
     {
         // Prefer moves facing same direction
-        private static Move[][] dirToMoves =
+        private static readonly Move[][] DirToMoves =
         {
             // Left,
             new[]
@@ -67,20 +70,52 @@
             }
         }
 
-        public IEnumerable<Command> Solve1(State state)
+        public IEnumerable<Command> Solve1(State initState)
         {
-            var map = state.Map;
+            // To be used only in the root of the function
+            var masterState = initState;
+            var map = masterState.Map;
+
+            // Used only by RunBfs()
             var bfs = new BfsState(map);
 
-            while (state.WrappedCellsCount != map.CellsToVisit.Count)
+            while (masterState.WrappedCellsCount != map.CellsToVisit.Count)
             {
-                if (RunBfs(state) && bfs.Path.Count > 0)
+                var firstPath = new List<Command>();
+
+                var noTurn = MeasureProfit(masterState, null, this.lookAheadSize, firstPath);
+                if (this.lookAheadSize == 0 || firstPath.Count > 10)
                 {
-                    foreach (var cmd in bfs.Path)
+                    var upTo = firstPath.Count - (this.lookAheadSize == 0 ? 0 : 10);
+                    for (var i = 0; i < upTo; ++i)
                     {
-                        state = state.Next(cmd) ?? throw new Exception("Impossible");
-                        yield return cmd;
+                        masterState = masterState.Next(firstPath[i]) ?? throw new Exception("Impossible");
+                        yield return firstPath[i];
                     }
+
+                    continue;
+                }
+
+                var profits = new[]
+                {
+                    noTurn,
+                    MeasureProfit(masterState, Turn.Left, this.lookAheadSize - 1),
+                    MeasureProfit(masterState, Turn.Right, this.lookAheadSize - 1),
+                };
+
+                var best = noTurn;
+                foreach (var p in profits)
+                {
+                    if (p.profit > best.profit)
+                    {
+                        best = p;
+                    }
+                }
+
+                if (best.command != null)
+                {
+                    masterState = masterState.Next(best.command) ?? throw new Exception("Impossible");
+                    yield return best.command;
                 }
                 else
                 {
@@ -88,11 +123,52 @@
                 }
             }
 
-            bool RunBfs(State from)
+            (Command? command, int profit) MeasureProfit(
+                State state, Command? firstCommand, int lookAhead, List<Command>? firstPath = null)
             {
-                var bot = from.GetBot(0);
+                if (firstCommand != null)
+                {
+                    var nextState = state.Next(firstCommand);
+                    if (nextState == null)
+                    {
+                        return (null, state.WrappedCellsCount);
+                    }
 
-                var possibleMoves = dirToMoves[bot.Dir];
+                    state = nextState;
+                }
+
+                var (firstBfsCommand, profit) = RepeatBfs(state, 1 + lookAhead, firstPath);
+                firstCommand ??= firstBfsCommand;
+
+                return (firstCommand, profit);
+            }
+
+            (Command? command, int profit) RepeatBfs(State state, int times, List<Command>? firstPath)
+            {
+                Command? firstCmd = null;
+                while (times > 0 && RunBfs(state) && bfs.Path.Count > 0)
+                {
+                    for (var i = 0; i < bfs.Path.Count && times > 0; ++i, --times)
+                    {
+                        if (firstCmd == null)
+                        {
+                            firstCmd = bfs.Path[0];
+                            firstPath?.AddRange(bfs.Path);
+                        }
+
+                        state = state.Next(bfs.Path[i]) ?? throw new Exception("Impossible");
+                    }
+                }
+
+                return (firstCmd, state.WrappedCellsCount);
+            }
+
+            bool RunBfs(State state)
+            {
+                var bot = state.GetBot(0);
+
+                var possibleMoves = DirToMoves[bot.Dir];
+
                 ++bfs.Generation;
                 bfs.Nodes[bot.X, bot.Y, bot.Dir] = new BfsState.Node(bfs.Generation, -1, 0);
                 bfs.Queue.Clear();
@@ -102,7 +178,7 @@
                 {
                     var (x, y, dirUnused) = bfs.Queue.Dequeue();
 
-                    if (from.UnwrappedCellsVisible(x, y, bot.Dir))
+                    if (state.UnwrappedCellsVisible(x, y, bot.Dir))
                     {
                         bfs.FindBackwardPath(x, y, bot.Dir, bot, possibleMoves);
                         return true;

@@ -19,19 +19,24 @@
         }
 
         [Fact]
-        public void RunDifferenteBfs()
+        public void RunDifferentBfs()
         {
             var map = MapParser.Parse(File.ReadAllText("../../../../Data/maps/prob-142.desc"));
 
             void Measure(IStrategy strat)
             {
                 var solution = Emulator.MakeExtendedSolution(map, strat);
+                File.WriteAllText($"../../../../Data/prob-142-{solution.StrategyName}.sol", solution.Commands);
                 this.testOutputHelper.WriteLine($"{strat.Name}: {solution.TimeUnits}");
             }
 
             Measure(new DumbBfs());
             Measure(new DumbBfs(false));
             Measure(new DumbLookAheadBfs(0));
+            Measure(new DumbLookAheadBfs(1));
+            Measure(new DumbLookAheadBfs(2));
+            Measure(new DumbLookAheadBfs(3));
+            Measure(new DumbLookAheadBfs(10));
         }
     }
 }
