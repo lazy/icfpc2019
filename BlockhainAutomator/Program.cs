@@ -89,24 +89,44 @@
 
             var extSolutionFile = $"{taskFile}.ext-sol";
             var solutionFile = $"{taskFile}.sol";
-            if (!File.Exists(extSolutionFile))
+
+            // if (!File.Exists(extSolutionFile))
             {
                 Console.WriteLine("Solving task");
+
+                var sw = new Stopwatch();
+                sw.Start();
+
+                // shuffled strategies list
                 var strategies = LookAheadFactory.MakeStrategies().Concat(new[] { new DumbBfs(), }).ToArray();
+                var rng = new Random();
+                strategies = strategies.OrderBy(s => rng.Next()).ToArray();
+
                 var map = MapParser.Parse(taskText);
                 var solutions = strategies.AsParallel()
-                    .Select(strategy => Emulator.MakeExtendedSolution(map, strategy))
-                    .ToArray();
+                    .Select(strategy => Emulator.MakeExtendedSolution(map, strategy));
 
+                // solve until one minute is left
+                var timeToSolve = blockAge.TotalMilliseconds - (30 * 1000);
+                Console.WriteLine($"Time to solve: {timeToSolve} ms");
+
+                var numTried = 0;
                 foreach (var sln in solutions)
                 {
+                    ++numTried;
                     sln.SaveIfBetter(extSolutionFile);
+                    if (sw.ElapsedMilliseconds > timeToSolve)
+                    {
+                        break;
+                    }
                 }
 
-                var extSlnLines = File.ReadAllLines(extSolutionFile);
-                Trace.Assert(extSlnLines.Length > 0);
-                File.WriteAllText(solutionFile, extSlnLines.Last());
+                Console.WriteLine($" Solution took: {sw.ElapsedMilliseconds} ms, {numTried} strategies out of {strategies.Length} tried");
             }
+
+            var extSlnLines = File.ReadAllLines(extSolutionFile);
+            Trace.Assert(extSlnLines.Length > 0);
+            File.WriteAllText(solutionFile, extSlnLines.Last());
 
             var submissionResultFile = Path.Combine(blockDir, "submit.txt");
 
