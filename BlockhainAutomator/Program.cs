@@ -93,12 +93,11 @@
             if (!File.Exists(extSolutionFile))
             {
                 Console.WriteLine("Solving task");
-
                 var sw = new Stopwatch();
                 sw.Start();
 
                 // shuffled strategies list
-                var strategies = LookAheadFactory.MakeStrategies().Concat(new[] { new DumbBfs(), }).ToArray();
+                var strategies = StrategyFactory.GenerateStrategies().ToArray();
                 var rng = new Random();
                 strategies = strategies.OrderBy(s => rng.Next()).ToArray();
 

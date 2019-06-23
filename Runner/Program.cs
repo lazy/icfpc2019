@@ -26,7 +26,7 @@
                     .ToArray();
             */
 
-            var strategies = LookAheadFactory.MakeStrategies().Concat(new[] { new DumbBfs(), }).ToArray();
+            var strategies = StrategyFactory.GenerateStrategies().ToArray();
 
             var totalTimeUnits = 0;
             var haveFailures = false;
@@ -41,25 +41,16 @@
                     var log = new List<string>();
                     var mapName = Path.GetFileNameWithoutExtension(mapFile);
 
-                    if (!mapName.Contains("112"))
-                    {
-                        return;
-                    }
-
                     log.Add($"Processing {mapName}");
                     var map = MapParser.Parse(File.ReadAllText(mapFile));
 
-                    /*
-                    // temporary for clonning debugging
+                    // temporary for cloning debugging
                     if (map.NumCloneBoosts == 0 || map.NumSpawnPoints == 0)
                     {
                         return;
                     }
-                    */
 
                     var extSolutionPath = $"Data/extended-solutions/{mapName}.ext-sol";
-
-                    var oldBestStrategyName = (string?)null;
 
                     // Delete broken solutions
                     if (File.Exists(extSolutionPath))
@@ -70,11 +61,9 @@
                         {
                             File.Delete(extSolutionPath);
                         }
-
-                        oldBestStrategyName = oldSolution.StrategyName;
                     }
 
-                    var solutions = strategies.AsParallel()
+                    var solutions = strategies /*.AsParallel()*/
                         .Where(strategy => !(mapName.Contains("294") && strategy.Name.Contains("DumbBfs")))
                         .Select(strategy => (strategy, Emulator.MakeExtendedSolution(map, strategy)))
                         .ToArray();
@@ -83,7 +72,10 @@
                     {
                         var (strategy, solution) = pair;
                         solution.SaveIfBetter(extSolutionPath);
-                        log.Add($"  {strategy.Name}: {solution.IsSuccessful}/{solution.TimeUnits}");
+                        if (solution.IsSuccessful)
+                        {
+                            log.Add($"  {strategy.Name}: {solution.TimeUnits}");
+                        }
                     }
 
                     var best = ExtendedSolution.Load(extSolutionPath);

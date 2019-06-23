@@ -123,6 +123,24 @@
 
         public Bot GetBot(int i) => this.bots[i];
 
+        public bool HaveManipulatorExtensions()
+        {
+            if (this.ManipulatorExtensionCount > 0)
+            {
+                return true;
+            }
+
+            foreach (var bot in this.bots)
+            {
+                if (this.map[bot.X, bot.Y] == Map.Cell.ManipulatorExtension && !this.IsPickedUp(bot.X, bot.Y))
+                {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
         public bool IsWrapped(int x, int y) => this.wrappedCells.TryFind((x, y), out var _);
 
         public bool IsPickedUp(int x, int y) => this.pickedUpBoosterCoords.TryFind((x, y), out var _);
