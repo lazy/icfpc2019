@@ -19,18 +19,6 @@
     {
         private const string BlockChainUrl = "https://lambdacoin.org/lambda";
 
-        private static string GetJsonPayload(string methodName, Dictionary<string, string> @params)
-        {
-            return JsonConvert.SerializeObject(
-                new
-                {
-                    jsonrpc = "2.0",
-                    id = "2ivans",
-                    method = methodName,
-                    @params,
-                });
-        }
-
         private static async Task<JObject> FetchApiAsync(string methodName, string? arg)
         {
             var httpClient = new HttpClient();
@@ -106,7 +94,24 @@
                 File.WriteAllText(solutionFile, extSlnLines.Last());
             }
 
-            Console.WriteLine($"Now run: lambda-cli.py submit {blockNum} {Path.GetFullPath(solutionFile)} {Path.GetFullPath(puzzleSolutionFile)}");
+            var submissionResultFile = Path.Combine(blockDir, "submit.txt");
+
+            if (!File.Exists(submissionResultFile))
+            {
+                Console.WriteLine("SUBMITTING!");
+
+                var payload = new MultipartFormDataContent();
+                payload.Add(new StringContent("2a78df7b478788ae4cf9d338"), "private_id");
+                payload.Add(new StringContent(blockNum.ToString()), "block_num");
+                payload.Add(new ByteArrayContent(File.ReadAllBytes(solutionFile)), "solution", "task.desc.sol");
+                payload.Add(new ByteArrayContent(File.ReadAllBytes(puzzleSolutionFile)), "puzzle", "puzzle.cond.desc");
+
+                var httpClient = new HttpClient();
+                var response = await httpClient.PostAsync($"{BlockChainUrl}/submit", payload);
+                var submissionResult = await response.Content.ReadAsStringAsync();
+                Console.WriteLine($"RESULT: {submissionResult}");
+                File.WriteAllText(submissionResultFile, submissionResult);
+            }
         }
 
         private static void Main()
@@ -123,8 +128,9 @@
                     Console.Error.WriteLine($"Something is wrong: {ex}!");
                 }
 
-                Console.WriteLine("Sleeping before attempting again");
-                Thread.Sleep(TimeSpan.FromSeconds(25));
+                var timeout = TimeSpan.FromSeconds(25);
+                Console.WriteLine($"Sleeping for {timeout} before attempting again");
+                Thread.Sleep(timeout);
             }
         }
 
