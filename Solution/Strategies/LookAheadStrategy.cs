@@ -9,10 +9,10 @@
 
     public static class LookAheadFactory
     {
-        private static int[] forcedManipulatorExtensionsCount = { 0, 1 };
+        private static int[] forcedManipulatorExtensionsCount = { 0, 1, 2, 3, 4, 8, 10000 };
         public static IEnumerable<IStrategy> MakeStrategies()
         {
-            foreach (var recalcsTime in new[] { 1 })
+            foreach (var recalcsTime in new[] { 1, 10 })
             {
                 foreach (var sym in new[] { true, false })
                 {
@@ -25,11 +25,11 @@
 
                         foreach (var forcedManipulatorExtensionsCount in forcedManipulatorExtensionsCount)
                         {
-                            foreach (var extraDepth in new[] { 1 })
+                            foreach (var extraDepth in new[] { 1, 2, 3, 4, 5, })
                             {
-                                foreach (var removeTurns in new[] { true })
+                                foreach (var removeTurns in new[] { true, false })
                                 {
-                                    foreach (var numVisCoeff in new[] { 0 })
+                                    foreach (var numVisCoeff in new[] { 0, 1 })
                                     {
                                         yield return new LookAheadStrategy(
                                             sym,
