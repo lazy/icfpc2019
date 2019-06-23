@@ -19,14 +19,6 @@
             var baseDir = args.Length > 0 ? args[0] : FindSolutionDir();
             Directory.SetCurrentDirectory(baseDir);
 
-            /*
-            var strategies =
-                typeof(DumbBfs).Assembly.DefinedTypes
-                    .Where(type => type.IsClass && !type.IsAbstract && typeof(IStrategy).IsAssignableFrom(type))
-                    .Select(type => (IStrategy)Activator.CreateInstance(type))
-                    .ToArray();
-            */
-
             var strategies = StrategyFactory.GenerateStrategies().ToArray();
 
             var totalTimeUnits = 0;
@@ -36,7 +28,7 @@
 
             Parallel.ForEach(
                 Directory.EnumerateFiles("Data/maps", "*.desc"),
-                new ParallelOptions { MaxDegreeOfParallelism = -1 },
+                new ParallelOptions { MaxDegreeOfParallelism = 1 },
                 mapFile =>
                 {
                     var log = new List<string>();
@@ -58,13 +50,11 @@
                     Log($"Processing {mapName}");
                     var map = MapParser.Parse(File.ReadAllText(mapFile));
 
-                    /*
                     // temporary for cloning debugging
                     if (map.NumCloneBoosts == 0 || map.NumSpawnPoints == 0)
                     {
                         return;
                     }
-                    */
 
                     var extSolutionPath = $"Data/extended-solutions/{mapName}.ext-sol";
 
@@ -88,14 +78,12 @@
                     {
                         var (strategy, solution) = pair;
                         solution.SaveIfBetter(extSolutionPath);
-<<<<<<< HEAD
                         if (solution.IsSuccessful)
                         {
                             log.Add($"  {strategy.Name}: {solution.TimeUnits}");
                         }
-=======
+
                         Log($"  {strategy.Name}: {solution.IsSuccessful}/{solution.TimeUnits}");
->>>>>>> Working strategy composition
                     }
 
                     var best = ExtendedSolution.Load(extSolutionPath);

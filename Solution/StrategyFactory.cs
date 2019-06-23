@@ -10,6 +10,14 @@
         {
             yield return new DumbBfs();
 
+            foreach (var strat in GenerateSimpleStrategies())
+            {
+                yield return new CloneStrategy(strat);
+            }
+        }
+
+        public static IEnumerable<IStrategy> GenerateSimpleStrategies()
+        {
             var manipStrategies = ManipulatorGrowthFactory.MakeStrategies();
             foreach (var manipStrategy in manipStrategies)
             {

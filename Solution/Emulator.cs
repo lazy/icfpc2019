@@ -42,8 +42,11 @@
             State? state = new State(map);
             var timeUnits = 0;
 
+            var buf = new List<Command[]>();
+
             foreach (var stepCommands in commands)
             {
+                buf.Add(stepCommands);
                 state = state.Next(stepCommands);
                 if (state == null)
                 {

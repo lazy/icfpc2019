@@ -70,14 +70,14 @@
             this.numVisCoeff = numVisCoeff;
         }
 
-        public string Name => string.Join(
-            "_",
-            nameof(BfsStrategy),
-            this.manipStrategy.Name,
-            this.recalcDistsFromCenterCount,
-            this.bfsExtraDepth,
-            this.removeTurns ? "RT" : "KT",
-            this.numVisCoeff);
+        public string Name =>
+            nameof(BfsStrategy) + "(" + string.Join(
+                ",",
+                this.manipStrategy.Name,
+                this.recalcDistsFromCenterCount,
+                this.bfsExtraDepth,
+                this.removeTurns ? "RT" : "KT",
+                this.numVisCoeff) + ")";
 
         public IEnumerable<Command[]> Solve(State state)
         {

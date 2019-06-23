@@ -72,7 +72,7 @@
                 throw new SkipStrategyException();
             }
 
-            var remainingBoostersCount = Math.Min(map.NumManipulatorExtensions, this.boostersCount);
+            var remainingBoostersCount = Math.Min(state.ManipulatoExtensionsOnTheFloorCount, this.boostersCount);
 
             Command Next(Command cmd)
             {

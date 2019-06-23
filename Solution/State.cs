@@ -11,7 +11,7 @@
 
     public class State
     {
-        private static readonly (int, int)[] InitManipConfig =
+        public static readonly (int, int)[] InitManipConfig =
         {
             (0, 0),
             (1, -1),
@@ -38,6 +38,7 @@
         private readonly int drillsCount;
         private readonly int teleportsCount;
         private readonly int cloneCount;
+        private readonly int totalPickedUpManipulatorExtensions;
 
         public State(Map map)
             : this(
@@ -59,7 +60,8 @@
                 fastWheelsCount: 0,
                 drillsCount: 0,
                 teleportsCount: 0,
-                cloneCount: 0)
+                cloneCount: 0,
+                totalPickedUpManipulatorExtensions: 0)
         {
         }
 
@@ -73,7 +75,8 @@
             int fastWheelsCount,
             int drillsCount,
             int teleportsCount,
-            int cloneCount)
+            int cloneCount,
+            int totalPickedUpManipulatorExtensions)
         {
             this.map = map;
             this.bots = bots;
@@ -98,6 +101,7 @@
             this.drillsCount = drillsCount;
             this.teleportsCount = teleportsCount;
             this.cloneCount = cloneCount;
+            this.totalPickedUpManipulatorExtensions = totalPickedUpManipulatorExtensions;
 
             // Debug.Assert(this.wrappedCellsCount == this.wrappedCells.Enumerate().Count(), "Counts do not match!");
         }
@@ -106,7 +110,11 @@
         public int BotsCount => this.bots.Length;
         public int Hash => 0;
         public int ManipulatorExtensionCount => this.manipulatorExtensionCount;
+        public int CloneBoosterCount => this.cloneCount;
         public int WrappedCellsCount => this.wrappedCellsCount;
+
+        public int ManipulatoExtensionsOnTheFloorCount =>
+            this.Map.NumManipulatorExtensions - this.totalPickedUpManipulatorExtensions;
 
         public static (int, int) TurnManip(int dir, (int, int) manipRelativeCoord)
         {
@@ -175,7 +183,7 @@
 
         public State? Next(params Command[] commands)
         {
-            if (commands.Length != this.BotsCount)
+            if (commands.Length > this.BotsCount)
             {
                 return null;
             }
@@ -191,6 +199,7 @@
             var newDrillsCount = this.drillsCount;
             var newTeleportsCount = this.teleportsCount;
             var newCloneCount = this.cloneCount;
+            var newTotalPickedUpManipulatorExtensions = this.totalPickedUpManipulatorExtensions;
 
             for (var i = 0; i < this.bots.Length; ++i)
             {
@@ -203,7 +212,14 @@
                     ref newFastWheelsCount,
                     ref newDrillsCount,
                     ref newTeleportsCount,
-                    ref newCloneCount);
+                    ref newCloneCount,
+                    ref newTotalPickedUpManipulatorExtensions);
+
+                if (i >= commands.Length)
+                {
+                    newBots[i] = bot;
+                    continue;
+                }
 
                 var command = commands[i];
                 var newBot = command switch
@@ -243,7 +259,25 @@
                 fastWheelsCount: newFastWheelsCount,
                 drillsCount: newDrillsCount,
                 teleportsCount: newTeleportsCount,
-                cloneCount: newCloneCount);
+                cloneCount: newCloneCount,
+                totalPickedUpManipulatorExtensions: newTotalPickedUpManipulatorExtensions);
+        }
+
+        // Useful for running strategy with single bot
+        public State ReplaceBots(bool resetBoosters, params Bot[] bot)
+        {
+            return new State(
+                map: this.map,
+                bots: bot,
+                wrapped: (this.wrappedCells, this.WrappedCellsCount),
+                pickedUpBoosterCoords: this.pickedUpBoosterCoords,
+                drilledCells: ImHashSet.Empty,
+                manipulatorExtensionCount: resetBoosters ? 0 : this.manipulatorExtensionCount,
+                fastWheelsCount: resetBoosters ? 0 : this.fastWheelsCount,
+                drillsCount: resetBoosters ? 0 : this.drillsCount,
+                teleportsCount: resetBoosters ? 0 : this.teleportsCount,
+                cloneCount: resetBoosters ? 0 : this.cloneCount,
+                this.totalPickedUpManipulatorExtensions);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -328,7 +362,8 @@
                 ref int newFastWheelsCount,
                 ref int newDrillsCount,
                 ref int newTeleportsCount,
-                ref int newCloneCount)
+                ref int newCloneCount,
+                ref int newTotalPickedUpManipulatorExtensions)
             {
                 switch (state.Map[this.X, this.Y])
                 {
@@ -341,19 +376,23 @@
                             "Obstacles must be drilled");
                         break;
                     case Map.Cell.FastWheels:
-                        this.CountBooster(ref newPickedUpBoosterCoords, ref newFastWheelsCount);
+                        this.PickUpBooster(ref newPickedUpBoosterCoords, ref newFastWheelsCount);
                         break;
                     case Map.Cell.Drill:
-                        this.CountBooster(ref newPickedUpBoosterCoords, ref newDrillsCount);
+                        this.PickUpBooster(ref newPickedUpBoosterCoords, ref newDrillsCount);
                         break;
                     case Map.Cell.ManipulatorExtension:
-                        this.CountBooster(ref newPickedUpBoosterCoords, ref newManipulatorExtensionCount);
+                        if (this.PickUpBooster(ref newPickedUpBoosterCoords, ref newManipulatorExtensionCount))
+                        {
+                            ++newTotalPickedUpManipulatorExtensions;
+                        }
+
                         break;
                     case Map.Cell.Teleport:
-                        this.CountBooster(ref newPickedUpBoosterCoords, ref newTeleportsCount);
+                        this.PickUpBooster(ref newPickedUpBoosterCoords, ref newTeleportsCount);
                         break;
                     case Map.Cell.Clone:
-                        this.CountBooster(ref newPickedUpBoosterCoords, ref newCloneCount);
+                        this.PickUpBooster(ref newPickedUpBoosterCoords, ref newCloneCount);
                         break;
                     case Map.Cell.Edge:
                     default:
@@ -540,13 +579,16 @@
             }
 
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            private void CountBooster(ref ImHashSet newPickedUpBoosterCoords, ref int counter)
+            private bool PickUpBooster(ref ImHashSet newPickedUpBoosterCoords, ref int counter)
             {
                 if (!newPickedUpBoosterCoords.TryFind((this.X, this.Y), out var _))
                 {
                     ++counter;
                     newPickedUpBoosterCoords = newPickedUpBoosterCoords.AddOrUpdate((this.X, this.Y), true);
+                    return true;
                 }
+
+                return false;
             }
         }
     }

@@ -10,7 +10,12 @@
         public static IEnumerable<Command[]> Parse(string commands)
         {
             var transposedCommands = commands.Split('#').Select(cmds => ParseOneBot(cmds).ToArray()).ToArray();
-            var nextCommandIdx = new int[transposedCommands.Length];
+            return Transponse(transposedCommands);
+        }
+
+        public static IEnumerable<Command[]> Transponse(Command[][] commandsPerBot)
+        {
+            var nextCommandIdx = new int[commandsPerBot.Length];
             var botsCount = 1;
 
             while (true)
@@ -22,9 +27,9 @@
                 for (var i = 0; i < botsCount; ++i)
                 {
                     var cmdIdx = nextCommandIdx[i]++;
-                    if (cmdIdx < transposedCommands[i].Length)
+                    if (cmdIdx < commandsPerBot[i].Length)
                     {
-                        var cmd = transposedCommands[i][cmdIdx];
+                        var cmd = commandsPerBot[i][cmdIdx];
                         botCommands[i] = cmd;
                         hasCommands = true;
 
@@ -104,7 +109,11 @@
                         transposedCommands.Add(new List<Command>());
                     }
 
-                    transposedCommands[idx].Add(botCmd);
+                    if (botCmd != null)
+                    {
+                        transposedCommands[idx].Add(botCmd);
+                    }
+
                     ++idx;
                 }
             }
