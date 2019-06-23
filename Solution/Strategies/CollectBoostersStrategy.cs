@@ -110,7 +110,10 @@
                 while (bfs.Queue.Count > 0)
                 {
                     var (x, y, dir) = bfs.Queue.Dequeue();
-                    Debug.Assert(bfs.Nodes[x, y, dir].Generation == bfs.Generation, "oops");
+                    if (bfs.Nodes[x, y, dir].Generation != bfs.Generation)
+                    {
+                        throw new Exception("oops");
+                    }
 
                     if (map[x, y] == Map.Cell.ManipulatorExtension && !state.IsPickedUp(x, y))
                     {

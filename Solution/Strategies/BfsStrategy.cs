@@ -145,7 +145,10 @@
                     var (x, y, dir) = bfs.Queue.Dequeue();
                     var depth = bfs.Nodes[x, y, dir].Depth;
 
-                    Debug.Assert(bfs.Nodes[x, y, dir].Generation == bfs.Generation, "oops");
+                    if (bfs.Nodes[x, y, dir].Generation != bfs.Generation)
+                    {
+                        throw new Exception("oops");
+                    }
 
                     if (maxDepth != null && depth > maxDepth.Value)
                     {

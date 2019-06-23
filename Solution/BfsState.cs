@@ -30,8 +30,6 @@
                     throw new Exception("ooops");
                 }
 
-                Debug.Assert(this.Nodes[x, y, dir].Generation == this.Generation, "oops");
-
                 var moveIdx = this.Nodes[x, y, dir].MoveIdx;
                 if (moveIdx >= 0)
                 {

@@ -1,6 +1,7 @@
 ﻿namespace Icfpc2019.Solution
 {
     using System;
+    using System.Collections.Generic;
     using System.Diagnostics;
     using System.Runtime.CompilerServices;
     using System.Runtime.InteropServices;
@@ -112,6 +113,7 @@
         public int ManipulatorExtensionCount => this.manipulatorExtensionCount;
         public int CloneBoosterCount => this.cloneCount;
         public int WrappedCellsCount => this.wrappedCellsCount;
+        public ImHashSet WrappedCells => this.wrappedCells;
 
         public int ManipulatoExtensionsOnTheFloorCount =>
             this.Map.NumManipulatorExtensions - this.totalPickedUpManipulatorExtensions;
@@ -153,7 +155,7 @@
 
         public bool IsPickedUp(int x, int y) => this.pickedUpBoosterCoords.TryFind((x, y), out var _);
 
-        public bool UnwrappedCellsVisible(int x, int y, int dir)
+        public bool UnwrappedCellsVisibleInZone(int x, int y, int dir, HashSet<(int, int)> zone)
         {
             foreach (var delta in this.bots[0].ManipConfig)
             {
@@ -161,6 +163,7 @@
                 var manipCoord = (x + dx, y + dy);
                 if (this.map.IsFree(x + dx, y + dy) &&
                     !this.wrappedCells.TryFind(manipCoord, out var _) &&
+                    zone.Contains(manipCoord) &&
                     this.map.AreVisible(x, y, x + dx, y + dy))
                 {
                     return true;
@@ -385,9 +388,11 @@
                     case Map.Cell.SpawnPoint:
                         break;
                     case Map.Cell.Obstacle:
-                        Debug.Assert(
-                            state.drilledCells.TryFind((this.X, this.Y), out var _),
-                            "Obstacles must be drilled");
+                        if (!state.drilledCells.TryFind((this.X, this.Y), out var _))
+                        {
+                            throw new Exception("ooops");
+                        }
+
                         break;
                     case Map.Cell.FastWheels:
                         this.PickUpBooster(ref newPickedUpBoosterCoords, ref newFastWheelsCount);

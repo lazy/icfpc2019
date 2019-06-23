@@ -3,6 +3,7 @@
     using System;
     using System.Collections.Generic;
     using System.Data;
+    using System.Linq;
 
     using Microsoft.VisualBasic;
 
@@ -76,55 +77,80 @@
             var masterState = initState;
             var map = masterState.Map;
 
-            // Used only by RunBfs()
+            // Used only by RunBfs() and FindSmallZones()
             var bfs = new BfsState(map);
 
-            while (masterState.WrappedCellsCount != map.CellsToVisit.Count)
+            var globalZoneToVisit = map.CellsToVisit.ToHashSet();
+
+            foreach (var visited in masterState.WrappedCells.Enumerate())
             {
-                var firstPath = new List<Command>();
+                globalZoneToVisit.Remove(visited.Key);
+            }
 
-                var noTurn = MeasureProfit(masterState, null, this.lookAheadSize, firstPath);
-                if (this.lookAheadSize == 0 || firstPath.Count > 10)
+            foreach (var cmd in RunInZone(globalZoneToVisit))
+            {
+                yield return cmd;
+            }
+
+            IEnumerable<Command> RunInZone(HashSet<(int, int)> zone)
+            {
+                while (true)
                 {
-                    var upTo = firstPath.Count - (this.lookAheadSize == 0 ? 0 : 10);
-                    for (var i = 0; i < upTo; ++i)
+                    var firstPath = new List<Command>();
+
+                    var noTurn = MeasureTurnProfit(masterState, zone, null, this.lookAheadSize, firstPath);
+
+                    if (firstPath.Count == 0)
                     {
-                        masterState = masterState.Next(firstPath[i]) ?? throw new Exception("Impossible");
-                        yield return firstPath[i];
+                        yield break;
                     }
 
-                    continue;
-                }
-
-                var profits = new[]
-                {
-                    noTurn,
-                    MeasureProfit(masterState, Turn.Left, this.lookAheadSize - 1),
-                    MeasureProfit(masterState, Turn.Right, this.lookAheadSize - 1),
-                };
-
-                var best = noTurn;
-                foreach (var p in profits)
-                {
-                    if (p.profit > best.profit)
+                    if (this.lookAheadSize == 0 || firstPath.Count > 10)
                     {
-                        best = p;
-                    }
-                }
+                        var upTo = firstPath.Count - (this.lookAheadSize == 0 ? 0 : 10);
+                        for (var i = 0; i < upTo; ++i)
+                        {
+                            masterState = masterState.Next(firstPath[i]) ?? throw new Exception("Impossible");
+                            yield return firstPath[i];
+                        }
 
-                if (best.command != null)
-                {
-                    masterState = masterState.Next(best.command) ?? throw new Exception("Impossible");
-                    yield return best.command;
-                }
-                else
-                {
-                    throw new Exception("Impossible");
+                        continue;
+                    }
+
+                    var profits = new[]
+                    {
+                        noTurn,
+                        MeasureTurnProfit(masterState, zone, Turn.Left, this.lookAheadSize - 1),
+                        MeasureTurnProfit(masterState, zone, Turn.Right, this.lookAheadSize - 1),
+                    };
+
+                    var best = noTurn;
+                    foreach (var p in profits)
+                    {
+                        if (p.profit > best.profit && p.profit > noTurn.profit + 1)
+                        {
+                            best = p;
+                        }
+                    }
+
+                    if (best.command != null)
+                    {
+                        masterState = masterState.Next(best.command) ?? throw new Exception("Impossible");
+                        yield return best.command;
+                    }
+                    else
+                    {
+                        throw new Exception("Impossible");
+                    }
                 }
             }
 
-            (Command? command, int profit) MeasureProfit(
-                State state, Command? firstCommand, int lookAhead, List<Command>? firstPath = null)
+            (Command? command, int profit) MeasureTurnProfit(
+                State state,
+                HashSet<(int, int)> zone,
+                Command? firstCommand,
+                int lookAhead,
+                List<Command>? firstPath = null)
             {
                 if (firstCommand != null)
                 {
@@ -137,16 +163,53 @@
                     state = nextState;
                 }
 
-                var (firstBfsCommand, profit) = RepeatBfs(state, 1 + lookAhead, firstPath);
-                firstCommand ??= firstBfsCommand;
+                var (firstBfsCommand, bfsProfit) = RepeatBfs(state, zone, 1 + lookAhead, firstPath);
 
-                return (firstCommand, profit);
+                if (lookAhead == 0)
+                {
+                    firstCommand ??= firstBfsCommand;
+                    return (firstCommand, bfsProfit);
+                }
+
+                var possibleMoves = DirToMoves[state.GetBot(0).Dir];
+                var bestMove = (command: (Command?)firstBfsCommand, profit: bfsProfit);
+                foreach (var move in possibleMoves)
+                {
+                    var profit = move == firstBfsCommand
+                        ? bfsProfit
+                        : MeasureMoveProfit(state, zone, move, lookAhead, null);
+                    if (profit > bestMove.profit)
+                    {
+                        bestMove = (move, profit);
+                    }
+                }
+
+                firstCommand ??= bestMove.command;
+
+                return (firstCommand, bestMove.profit);
             }
 
-            (Command? command, int profit) RepeatBfs(State state, int times, List<Command>? firstPath)
+            int MeasureMoveProfit(
+                State state,
+                HashSet<(int, int)> zone,
+                Command firstCommand,
+                int lookAhead,
+                List<Command>? firstPath = null)
+            {
+                var nextState = state.Next(firstCommand);
+                if (nextState == null)
+                {
+                    return -1;
+                }
+
+                firstPath?.Add(firstCommand);
+                return RepeatBfs(nextState, zone, lookAhead, firstPath).profit;
+            }
+
+            (Command? command, int profit) RepeatBfs(State state, HashSet<(int, int)> zone, int times, List<Command>? firstPath)
             {
                 Command? firstCmd = null;
-                while (times > 0 && RunBfs(state) && bfs.Path.Count > 0)
+                while (times > 0 && RunBfs(state, zone) && bfs.Path.Count > 0)
                 {
                     for (var i = 0; i < bfs.Path.Count && times > 0; ++i, --times)
                     {
@@ -163,7 +226,7 @@
                 return (firstCmd, state.WrappedCellsCount);
             }
 
-            bool RunBfs(State state)
+            bool RunBfs(State state, HashSet<(int, int)> zone)
             {
                 var bot = state.GetBot(0);
 
@@ -178,7 +241,7 @@
                 {
                     var (x, y, dirUnused) = bfs.Queue.Dequeue();
 
-                    if (state.UnwrappedCellsVisible(x, y, bot.Dir))
+                    if (state.UnwrappedCellsVisibleInZone(x, y, bot.Dir, zone))
                     {
                         bfs.FindBackwardPath(x, y, bot.Dir, bot, possibleMoves);
                         return true;
