@@ -125,16 +125,5 @@
 
             ZipFile.CreateFromDirectory($"Data/solutions", submissionFile);
         }
-
-        private static string FindSolutionDir()
-        {
-            var dir = Directory.GetCurrentDirectory();
-            while (!File.Exists($"{dir}/icfpc2019.sln"))
-            {
-                dir = Path.GetDirectoryName(dir);
-            }
-
-            return dir;
-        }
     }
 }
