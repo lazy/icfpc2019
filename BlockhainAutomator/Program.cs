@@ -23,6 +23,7 @@
             var map = MapParser.Parse(File.ReadAllText(taskFile));
             var solutions = strategies.AsParallel()
                 .Select(strategy => Emulator.MakeExtendedSolution(map, strategy))
+                .Take(20)
                 .ToArray();
 
             var extSolutionFile = Path.Combine($"{taskFile}.ext-sol");
