@@ -226,7 +226,7 @@ namespace Icfpc2019.Solution
                 Ensure(!mapInterior.Contains(outSq), $"Outside point {outSq} is inside", 10);
             }
 
-            var startPoint = new Point { X = map.StartX, Y = map.StartY };
+            var startPoint = CorrectPoint(new Point { X = map.StartX, Y = map.StartY });
             Ensure(mapInterior.Contains(startPoint), "The initial position is outside", 3);
 
             var mNumValid = 0;
@@ -237,7 +237,7 @@ namespace Icfpc2019.Solution
             var xNumValid = 0;
             foreach (var p in mapInterior)
             {
-                switch (map[p.X, p.Y])
+                switch (map[p.X + 1, p.Y + 1])
                 {
                     case Map.Cell.ManipulatorExtension:
                         ++mNumValid;
