@@ -13,7 +13,7 @@
             this.subStrategies = subStrategies;
         }
 
-        public string Name => "(" + string.Join("->", this.subStrategies.Select(strat => strat.Name)) + ")";
+        public string Name => "[" + string.Join(", ", this.subStrategies.Select(strat => strat.Name)) + "]";
 
         public IEnumerable<Command[]> Solve(State state)
         {

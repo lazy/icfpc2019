@@ -5,6 +5,7 @@
     using System.IO;
     using System.IO.Compression;
     using System.Linq;
+    using System.Reflection.Metadata.Ecma335;
     using System.Threading.Tasks;
 
     using Icfpc2019.Solution;
@@ -12,6 +13,7 @@
     public class Program
     {
         // For debugging
+        private static readonly int? StrategiesLimit = 50;
         private static readonly bool LogImmediately = false;
 
         public static void Main(string[] args)
@@ -28,7 +30,7 @@
 
             Parallel.ForEach(
                 Directory.EnumerateFiles("Data/maps", "*.desc"),
-                new ParallelOptions { MaxDegreeOfParallelism = 1 },
+                new ParallelOptions { MaxDegreeOfParallelism = -1 },
                 mapFile =>
                 {
                     var log = new List<string>();
@@ -69,21 +71,28 @@
                         }
                     }
 
-                    var solutions = strategies /*.AsParallel()*/
-                        .Where(strategy => !(mapName.Contains("294") && strategy.Name.Contains("DumbBfs")))
-                        .Select(strategy => (strategy, Emulator.MakeExtendedSolution(map, strategy)))
-                        .ToArray();
+                    var rng = new Random();
+                    var currentStrategies = StrategiesLimit != null
+                        ? strategies.OrderBy(s => rng.Next()).ToArray()
+                        : strategies;
 
+                    var solutions = currentStrategies /*.AsParallel()*/
+                        .Where(strategy => !(mapName.Contains("294") && strategy.Name.Contains("DumbBfs")))
+                        .Select(strategy => (strategy, Emulator.MakeExtendedSolution(map, strategy)));
+
+                    var numSuccessful = 0;
                     foreach (var pair in solutions)
                     {
                         var (strategy, solution) = pair;
                         solution.SaveIfBetter(extSolutionPath);
                         if (solution.IsSuccessful)
                         {
-                            log.Add($"  {strategy.Name}: {solution.TimeUnits}");
+                            Log($"  {strategy.Name}: {solution.TimeUnits}");
+                            if (StrategiesLimit != null && ++numSuccessful >= StrategiesLimit)
+                            {
+                                break;
+                            }
                         }
-
-                        Log($"  {strategy.Name}: {solution.IsSuccessful}/{solution.TimeUnits}");
                     }
 
                     var best = ExtendedSolution.Load(extSolutionPath);
