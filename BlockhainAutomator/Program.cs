@@ -17,27 +17,27 @@
     {
         private const string BlockChainUrl = "https://lambdacoin.org/lambda";
 
-        private static async Task<JObject> FetchApiAsync(string methodName, string? arg)
+        private static async Task<string> FetchApiAsync(string methodName, string? arg)
         {
             var httpClient = new HttpClient();
             var suffix = arg == null ? string.Empty : $"/{arg}";
             var response = await httpClient.GetAsync($"{BlockChainUrl}/{methodName}{suffix}");
-            var rawResponse = await response.Content.ReadAsStringAsync();
-            return JObject.Parse(rawResponse);
+            return await response.Content.ReadAsStringAsync();
         }
 
         private static async Task SolveCurrentBlockAsync()
         {
-            var metaInfo = await FetchApiAsync("getblockchaininfo", null);
+            var balanceInfo = int.Parse(await FetchApiAsync("getbalance", "83"));
+            var metaInfo = JObject.Parse(await FetchApiAsync("getblockchaininfo", null));
             var blockNum = metaInfo["block"].Value<int>();
             var blockSubs = metaInfo["block_subs"].Value<int>();
-            var blockInfo = await FetchApiAsync("getblockinfo", blockNum.ToString());
+            var blockInfo = JObject.Parse(await FetchApiAsync("getblockinfo", blockNum.ToString()));
             var blockTs = DateTimeOffset.FromUnixTimeSeconds((int)blockInfo["block_ts"].Value<double>());
             var blockAge = DateTimeOffset.UtcNow - blockTs;
             var puzzleText = blockInfo["puzzle"].Value<string>();
             var taskText = blockInfo["task"].Value<string>();
 
-            Console.WriteLine($"Current block: #{blockNum}, aged {blockAge}, {blockSubs} submissions");
+            Console.WriteLine($"Current block: #{blockNum}, aged {blockAge}, {blockSubs} submissions, our balance: {balanceInfo}");
 
             var solutionDir = FindSolutionDir();
             var blockDir = Path.Combine(solutionDir, $@"Data\blocks\{blockNum}");
