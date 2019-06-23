@@ -1,0 +1,1 @@
+{"errors":{"is_resubmit":"You (team 83) have already sent a submission for block 43."}}

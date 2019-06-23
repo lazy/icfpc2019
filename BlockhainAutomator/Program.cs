@@ -80,7 +80,6 @@
                 var map = MapParser.Parse(taskText);
                 var solutions = strategies.AsParallel()
                     .Select(strategy => Emulator.MakeExtendedSolution(map, strategy))
-                    .Take(20)
                     .ToArray();
 
                 foreach (var sln in solutions)
