@@ -8,7 +8,9 @@
     {
         private static void Main(string[] args)
         {
-            var puzzleFile = args[0];
+            var blockDir = args[0];
+
+            var puzzleFile = Path.Combine(blockDir, "puzzle.cond");
             var puzzle = new Puzzle(File.ReadAllText(puzzleFile));
             File.WriteAllText($"{puzzleFile}.desc", puzzle.SaveToMap());
             puzzle.SaveToBitmap().Save($"{puzzleFile}.png");
