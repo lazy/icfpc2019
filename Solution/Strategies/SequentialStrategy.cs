@@ -28,6 +28,7 @@
                     }
 
                     yield return botCommands;
+                    state = nextState;
                 }
             }
         }

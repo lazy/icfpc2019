@@ -73,7 +73,7 @@
         public string Name => string.Join(
             "_",
             nameof(BfsStrategy),
-            this.manipStrategy,
+            this.manipStrategy.Name,
             this.recalcDistsFromCenterCount,
             this.bfsExtraDepth,
             this.removeTurns ? "RT" : "KT",

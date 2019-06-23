@@ -5,14 +5,15 @@
     using System.IO;
     using System.IO.Compression;
     using System.Linq;
-    using System.Reflection.Metadata.Ecma335;
     using System.Threading.Tasks;
 
     using Icfpc2019.Solution;
-    using Icfpc2019.Solution.Strategies;
 
     public class Program
     {
+        // For debugging
+        private static readonly bool LogImmediately = false;
+
         public static void Main(string[] args)
         {
             var baseDir = args.Length > 0 ? args[0] : FindSolutionDir();
@@ -35,20 +36,35 @@
 
             Parallel.ForEach(
                 Directory.EnumerateFiles("Data/maps", "*.desc"),
-                new ParallelOptions { MaxDegreeOfParallelism = 1 },
+                new ParallelOptions { MaxDegreeOfParallelism = -1 },
                 mapFile =>
                 {
                     var log = new List<string>();
+
+                    void Log(string msg)
+                    {
+                        if (LogImmediately)
+                        {
+                            Console.WriteLine($"{msg}");
+                        }
+                        else
+                        {
+                            log.Add(msg);
+                        }
+                    }
+
                     var mapName = Path.GetFileNameWithoutExtension(mapFile);
 
-                    log.Add($"Processing {mapName}");
+                    Log($"Processing {mapName}");
                     var map = MapParser.Parse(File.ReadAllText(mapFile));
 
+                    /*
                     // temporary for cloning debugging
                     if (map.NumCloneBoosts == 0 || map.NumSpawnPoints == 0)
                     {
                         return;
                     }
+                    */
 
                     var extSolutionPath = $"Data/extended-solutions/{mapName}.ext-sol";
 
@@ -72,15 +88,19 @@
                     {
                         var (strategy, solution) = pair;
                         solution.SaveIfBetter(extSolutionPath);
+<<<<<<< HEAD
                         if (solution.IsSuccessful)
                         {
                             log.Add($"  {strategy.Name}: {solution.TimeUnits}");
                         }
+=======
+                        Log($"  {strategy.Name}: {solution.IsSuccessful}/{solution.TimeUnits}");
+>>>>>>> Working strategy composition
                     }
 
                     var best = ExtendedSolution.Load(extSolutionPath);
                     File.WriteAllText($"Data/solutions/{mapName}.sol", best.Commands);
-                    log.Add($"  BEST ({best.StrategyName}): {best.IsSuccessful}/{best.TimeUnits}");
+                    Log($"  BEST ({best.StrategyName}): {best.IsSuccessful}/{best.TimeUnits}");
 
                     lock (outputLock)
                     {
