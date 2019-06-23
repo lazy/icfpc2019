@@ -22,14 +22,14 @@
             Move.Down,
         };
 
-        private readonly bool enableExtensions;
+        private readonly bool enableBoosters;
 
-        public DumbBfs(bool enableExtensions = true)
+        public DumbBfs(bool enableBoosters = true)
         {
-            this.enableExtensions = enableExtensions;
+            this.enableBoosters = enableBoosters;
         }
 
-        public string Name => $"{nameof(DumbBfs)}{(this.enableExtensions ? string.Empty : "NoExt")}";
+        public string Name => $"{nameof(DumbBfs)}{(this.enableBoosters ? string.Empty : "NoBoost")}";
 
         public IEnumerable<Command[]> Solve(State state)
         {
@@ -58,7 +58,7 @@
             {
                 if (map.IsFree(startPoint.X, startPoint.Y))
                 {
-                    if (this.enableExtensions && map[startPoint.X, startPoint.Y] == Map.Cell.ManipulatorExtension)
+                    if (this.enableBoosters && map[startPoint.X, startPoint.Y] == Map.Cell.ManipulatorExtension)
                     {
                         if (positiveExtension == negativeExtension)
                         {
@@ -72,12 +72,12 @@
                         }
                     }
 
-                    if (map[startPoint.X, startPoint.Y] == Map.Cell.Drill)
+                    if (this.enableBoosters && map[startPoint.X, startPoint.Y] == Map.Cell.Drill)
                     {
                         yield return UseDrill.Instance;
                         drillTime = 30;
                     }
-                    else if (map[startPoint.X, startPoint.Y] == Map.Cell.FastWheels)
+                    else if (this.enableBoosters && map[startPoint.X, startPoint.Y] == Map.Cell.FastWheels)
                     {
                         yield return UseFastWheels.Instance;
                         speedTime = 50;

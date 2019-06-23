@@ -52,7 +52,7 @@
             this.lookAheadSize = lookAheadSize;
         }
 
-        public string Name => "GoodBfs";
+        public string Name => $"{nameof(DumbLookAheadBfs)}({this.lookAheadSize})";
 
         public IEnumerable<Command[]> Solve(State state)
         {
