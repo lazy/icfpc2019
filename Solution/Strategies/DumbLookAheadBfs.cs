@@ -11,13 +11,13 @@
         // Prefer moves facing same direction
         private static readonly Move[][] DirToMoves =
         {
-            // Left,
+            // Right
             new[]
             {
-                Move.Left,
-                Move.Down,
-                Move.Up,
                 Move.Right,
+                Move.Up,
+                Move.Down,
+                Move.Left,
             },
 
             // Up
@@ -29,13 +29,13 @@
                 Move.Down,
             },
 
-            // Right
+            // Left
             new[]
             {
-                Move.Right,
-                Move.Up,
-                Move.Down,
                 Move.Left,
+                Move.Down,
+                Move.Up,
+                Move.Right,
             },
 
             // Down
