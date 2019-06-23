@@ -85,7 +85,7 @@
 
         private readonly bool symmetricGrowth;
         private readonly int initSignGrowth;
-        private readonly int recalcDistsFromCenterCount;
+        private readonly int recalcDistsFromLeafsCount;
         private readonly int forcedManipulatorExtensionsCount;
         private readonly int bfsExtraDepth;
         private readonly bool removeTurns;
@@ -94,7 +94,7 @@
         public LookAheadStrategy(
             bool symmetricGrowth,
             int initSignGrowth,
-            int recalcDistsFromCenterCount,
+            int recalcDistsFromLeafsCount,
             int forcedManipulatorExtensionsCount,
             int bfsExtraDepth,
             bool removeTurns,
@@ -102,7 +102,7 @@
         {
             this.symmetricGrowth = symmetricGrowth;
             this.initSignGrowth = initSignGrowth;
-            this.recalcDistsFromCenterCount = recalcDistsFromCenterCount;
+            this.recalcDistsFromLeafsCount = recalcDistsFromLeafsCount;
             this.forcedManipulatorExtensionsCount = forcedManipulatorExtensionsCount;
             this.bfsExtraDepth = bfsExtraDepth;
             this.removeTurns = removeTurns;
@@ -114,7 +114,7 @@
             nameof(LookAheadStrategy),
             this.symmetricGrowth ? "Sym" : "Assym",
             this.initSignGrowth > 0 ? "L" : "R",
-            this.recalcDistsFromCenterCount,
+            this.recalcDistsFromLeafsCount,
             this.forcedManipulatorExtensionsCount,
             this.bfsExtraDepth,
             this.removeTurns ? "RT" : "KT",
@@ -142,9 +142,9 @@
             var bfsQueue = new Queue<(int, int, int)>();
             var bfsPath = new List<Command>();
 
-            var distsFromCenter = map.DistsFromCenter;
-            var distsFromCenterTimer = 0;
-            var distsFromCenterTimerResetPeriod = Math.Max(10, 1 + (map.CellsToVisit.Count() / this.recalcDistsFromCenterCount));
+            var distsFromLeafs = map.DistsFromLeafs;
+            var distsFromLeafsTimer = 0;
+            var distsFromLeafsTimerResetPeriod = Math.Max(10, 1 + (map.CellsToVisit.Count() / this.recalcDistsFromLeafsCount));
 
             // for debugging purposes
             // var history = new List<(Command, State)>();
@@ -154,11 +154,11 @@
                 var wrappedDiff = newState.WrappedCellsCount - state.WrappedCellsCount;
                 state = newState;
 
-                distsFromCenterTimer += wrappedDiff;
-                if (distsFromCenterTimer >= distsFromCenterTimerResetPeriod)
+                distsFromLeafsTimer += wrappedDiff;
+                if (distsFromLeafsTimer >= distsFromLeafsTimerResetPeriod)
                 {
-                    distsFromCenter = new DistsFromCenter(state);
-                    distsFromCenterTimer = 0;
+                    distsFromLeafs = new DistsFromLeafs(state);
+                    distsFromLeafsTimer = 0;
                 }
 
                 if (cmd is UseManipulatorExtension)
@@ -185,7 +185,7 @@
 
             while (state.WrappedCellsCount != map.CellsToVisit.Count)
             {
-                Bfs(distsFromCenter);
+                Bfs(distsFromLeafs);
 
                 if (HaveManipulatorExtensions())
                 {
@@ -270,7 +270,7 @@
                 var beam = new StablePriorityQueue<WeightedState>(BeamSize + 1);
                 var seenStates = new HashSet<int>();
 
-                var startState = new WeightedState(state, null, distsFromCenter);
+                var startState = new WeightedState(state, null, distsFromLeafs);
                 beam.Enqueue(startState, startState.CalcPriority(bot.X, bot.Y));
 
                 var bestState = (WeightedState?)null;
@@ -299,7 +299,7 @@
                                 if (beam.Count < BeamSize ||
                                     nextState.WrappedCellsCount > beam.First.State.WrappedCellsCount)
                                 {
-                                    var nextWeightedState = new WeightedState(nextState, (prevState, command), distsFromCenter);
+                                    var nextWeightedState = new WeightedState(nextState, (prevState, command), distsFromLeafs);
                                     beam.Enqueue(nextWeightedState, nextWeightedState.CalcPriority(bot.X, bot.Y));
 
                                     // remove worst states
@@ -374,7 +374,7 @@
                 throw new InvalidOperationException();
             }
 
-            void Bfs(DistsFromCenter distsFromCenter)
+            void Bfs(DistsFromLeafs distsFromLeafs)
             {
                 var bot = state.GetBot(0);
 
@@ -384,7 +384,7 @@
                 bfsNodes[bot.X, bot.Y, bot.Dir] = new BfsNode(generation, -1, 0);
 
                 int? maxDepth = null;
-                (int, int, int, bool isExtensionBooster, int numVis, int distFromCenter)? bestDest = null;
+                (int, int, int, bool isExtensionBooster, int numVis, int distFromLeafs)? bestDest = null;
 
                 while (bfsQueue.Count > 0)
                 {
@@ -400,14 +400,14 @@
                             throw new InvalidOperationException();
                         }
 
-                        var (destX, destY, destDir, destIsExtensionBooster, destNumVis, bestDistFromCenter) = bestDest.Value;
+                        var (destX, destY, destDir, destIsExtensionBooster, destNumVis, bestDistFromLeafs) = bestDest.Value;
                         FindBackwardPath(destX, destY, destDir);
                         return;
                     }
 
                     // path found, but search a bit more for deeper fruits
                     var isExtensionBooster = map[x, y] == Map.Cell.ManipulatorExtension && !state.IsPickedUp(x, y);
-                    var (numVis, distFromCenter) = state.MaxUnwrappedVisibleDistFromCenter(x, y, dir, distsFromCenter);
+                    var (numVis, distFromLeafs) = state.MinUnwrappedVisibleDistFromLeafs(x, y, dir, distsFromLeafs);
                     if (numVis > 0 || isExtensionBooster)
                     {
                         if (maxDepth == null)
@@ -416,9 +416,9 @@
                         }
 
                         if (bestDest == null ||
-                            Quality(isExtensionBooster, numVis, distFromCenter) > Quality(bestDest.Value.isExtensionBooster, bestDest.Value.numVis, bestDest.Value.distFromCenter))
+                            Quality(isExtensionBooster, numVis, distFromLeafs) > Quality(bestDest.Value.isExtensionBooster, bestDest.Value.numVis, bestDest.Value.distFromLeafs))
                         {
-                            bestDest = (x, y, dir, isExtensionBooster, numVis, distFromCenter);
+                            bestDest = (x, y, dir, isExtensionBooster, numVis, distFromLeafs);
                         }
                     }
 
@@ -450,8 +450,8 @@
                     bestDest ?? throw new InvalidOperationException("Couldn't find any path with BFS!");
                 FindBackwardPath(finalX, finalY, finalDir);
 
-                int Quality(bool isBooster, int numVis, int distFromCenter1) =>
-                    (isBooster ? 10000 : 0) + (this.numVisCoeff * numVis) + (10 * distFromCenter1);
+                int Quality(bool isBooster, int numVis, int distFromLeafs1) =>
+                    (isBooster ? 10000 : 0) + (this.numVisCoeff * numVis) - (10 * distFromLeafs1);
             }
 
             void FindBackwardPath(int x, int y, int dir)
@@ -520,13 +520,13 @@
 
         private class WeightedState : StablePriorityQueueNode
         {
-            public WeightedState(State state, (WeightedState, Command)? prev, DistsFromCenter distsFromCenter)
+            public WeightedState(State state, (WeightedState, Command)? prev, DistsFromLeafs distsFromLeafs)
             {
                 var bot = state.GetBot(0);
                 this.State = state;
                 this.Prev = prev;
                 this.BestVisibleCount = Math.Max(
-                    this.State.MaxUnwrappedVisibleDistFromCenter(bot.X, bot.Y, bot.Dir, distsFromCenter).maxDist,
+                    this.State.MinUnwrappedVisibleDistFromLeafs(bot.X, bot.Y, bot.Dir, distsFromLeafs).maxDist,
                     this.Prev?.state?.BestVisibleCount ?? 0);
             }
 

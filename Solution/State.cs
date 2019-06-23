@@ -127,14 +127,14 @@
 
         public bool IsPickedUp(int x, int y) => this.pickedUpBoosterCoords.TryFind((x, y), out var _);
 
-        public bool UnwrappedVisible(int x, int y, int dir, DistsFromCenter dists) =>
-            this.MaxUnwrappedVisibleDistFromCenter(x, y, dir, dists).Item1 != 0;
+        public bool UnwrappedVisible(int x, int y, int dir, DistsFromLeafs dists) =>
+            this.MinUnwrappedVisibleDistFromLeafs(x, y, dir, dists).Item1 != 0;
 
-        public (int numVis, int maxDist) MaxUnwrappedVisibleDistFromCenter(int x, int y, int dir, DistsFromCenter dists)
+        public (int numVis, int maxDist) MinUnwrappedVisibleDistFromLeafs(int x, int y, int dir, DistsFromLeafs dists)
         {
             // FIXME: we consider only one bot
-            var sumVis = 0;
-            var max = 0;
+            var numVis = 0;
+            var min = 10000;
             foreach (var delta in this.bots[0].ManipConfig)
             {
                 var (dx, dy) = TurnManip(dir, delta);
@@ -144,15 +144,15 @@
                     !this.wrappedCells.TryFind(manipCoord, out var _) &&
                     this.map.AreVisible(x, y, x + dx, y + dy))
                 {
-                    sumVis += dists.GetDist(x + dx, y + dy);
-                    if (dists.GetDist(x + dx, y + dy) > max)
+                    numVis += dists.GetDist(x + dx, y + dy);
+                    if (dists.GetDist(x + dx, y + dy) > min)
                     {
-                        max = dists.GetDist(x + dx, y + dy);
+                        min = dists.GetDist(x + dx, y + dy);
                     }
                 }
             }
 
-            return (sumVis, max);
+            return (numVis, min);
         }
 
         public State? Next(params Command[] commands)

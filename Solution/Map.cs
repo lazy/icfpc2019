@@ -49,7 +49,7 @@
                 }
             }
 
-            this.DistsFromCenter = new DistsFromCenter(new State(this));
+            this.DistsFromLeafs = new DistsFromLeafs(new State(this));
             this.NumManipulatorExtensions = numManipulatorExtensions;
             this.NumCloneBoosts = numCloneBoosts;
             this.NumSpawnPoints = numSpawnPoints;
@@ -75,7 +75,7 @@
 
         public int StartY { get; }
 
-        public DistsFromCenter DistsFromCenter { get; }
+        public DistsFromLeafs DistsFromLeafs { get; }
 
         public int NumManipulatorExtensions { get; }
         public int NumCloneBoosts { get; }
