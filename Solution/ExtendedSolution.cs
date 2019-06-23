@@ -16,14 +16,14 @@
             string comment,
             string strategyName,
             string gitCommitId,
-            Command[][] moves)
+            IEnumerable<Command[]> commands)
             : this(
                 isSuccessful,
                 timeUnits,
                 comment,
                 strategyName,
                 gitCommitId,
-                CommandsSerializer.Serialize(moves))
+                CommandsSerializer.Serialize(commands))
         {
         }
 

@@ -37,14 +37,14 @@
 
         public string Name => $"${this.kind}{(this.initSign > 0 ? 'L' : 'R')}";
 
-        public Command[][] Solve(State state)
+        public IEnumerable<Command[]> Solve(State state)
         {
-            if (state.BotsCount > 1 || !state.HaveManipulatorExtensions())
+            if (state.BotsCount > 1)
             {
-                throw new Exception("This strategy works only with 1 bot and available growth externsions");
+                throw new Exception("This strategy works only with 1 bot");
             }
 
-            return new[] { new[] { this.Grow(state) } };
+            yield return new[] { this.Grow(state) };
         }
 
         public Command Grow(State state)

@@ -79,14 +79,17 @@
             this.removeTurns ? "RT" : "KT",
             this.numVisCoeff);
 
-        public Command[][] Solve(State state)
+        public IEnumerable<Command[]> Solve(State state)
         {
             if (state.BotsCount > 1)
             {
                 throw new Exception("This strategy works only with 1 bot");
             }
 
-            return new[] { this.Solve1(state).ToArray() };
+            foreach (var cmd in this.Solve1(state))
+            {
+                yield return new[] { cmd };
+            }
         }
 
         public IEnumerable<Command> Solve1(State state)
