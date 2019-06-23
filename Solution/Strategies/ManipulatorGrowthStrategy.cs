@@ -12,12 +12,10 @@
             yield return new ManipulatorGrowthStrategy(1, ManipulatorGrowthStrategy.Kind.AsymLine);
             yield return new ManipulatorGrowthStrategy(-1, ManipulatorGrowthStrategy.Kind.AsymLine);
 
-            /*
             yield return new ManipulatorGrowthStrategy(1, ManipulatorGrowthStrategy.Kind.SymBox);
             yield return new ManipulatorGrowthStrategy(-1, ManipulatorGrowthStrategy.Kind.SymBox);
             yield return new ManipulatorGrowthStrategy(1, ManipulatorGrowthStrategy.Kind.AsymBox);
             yield return new ManipulatorGrowthStrategy(-1, ManipulatorGrowthStrategy.Kind.AsymBox);
-            */
         }
     }
 
