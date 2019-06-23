@@ -138,7 +138,8 @@
                         var (x, y, dir) = bfs.Queue.Dequeue();
 
                         if ((map[x, y] == Map.Cell.Clone && !state.IsPickedUp(x, y) && (x, y) != (bot.X, bot.Y)) ||
-                            (map[x, y] == Map.Cell.SpawnPoint && state.CloneBoosterCount > 0))
+                            (map[x, y] == Map.Cell.SpawnPoint &&
+                             (state.CloneBoosterCount > 0 || (map[bot.X, bot.Y] == Map.Cell.Clone && !state.IsPickedUp(bot.X, bot.Y)))))
                         {
                             bfs.FindBackwardPath(x, y, 0, bot);
                             return bfs.Path;
