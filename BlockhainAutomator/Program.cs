@@ -59,9 +59,25 @@
             if (!File.Exists(puzzleSolutionFile))
             {
                 Console.WriteLine("Solving puzzle");
-                var puzzle = new Puzzle(puzzleText);
-                File.WriteAllText(puzzleSolutionFile, puzzle.SaveToMap());
-                puzzle.SaveToBitmap().Save($"{puzzleFile}.png");
+                var seed = 3133337;
+                while (true)
+                {
+                    Console.WriteLine($"Solving puzzle with seed {seed}");
+                    var puzzle = new Puzzle(puzzleText, seed);
+                    File.WriteAllText(puzzleSolutionFile, puzzle.SaveToMap());
+                    puzzle.SaveToBitmap().Save($"{puzzleFile}.png");
+                    try
+                    {
+                        puzzle.EnsureMapIsValid(puzzleSolutionFile);
+                        Console.WriteLine("Have a valid solution");
+                        break;
+                    }
+                    catch (Exception ex)
+                    {
+                        Console.WriteLine($"Puzzle solution is invalid: {ex.Message}");
+                        ++seed;
+                    }
+                }
             }
 
             var taskFile = Path.Combine(blockDir, "task.desc");

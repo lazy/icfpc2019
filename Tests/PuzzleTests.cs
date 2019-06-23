@@ -20,11 +20,11 @@ namespace Icfpc2019.Tests
         [Fact]
         public void TestValidation()
         {
-            var puzzle14 = new Puzzle(File.ReadAllText(@"..\..\..\..\Data\blocks\14\puzzle.cond"));
+            var puzzle14 = new Puzzle(File.ReadAllText(@"..\..\..\..\Data\blocks\14\puzzle.cond"), 3133337);
             var map14 = @"..\..\..\..\Data\blocks\14\puzzle.cond.desc";
             Assert.Throws<Exception>(() => puzzle14.EnsureMapIsValid(map14));
 
-            var puzzle15 = new Puzzle(File.ReadAllText(@"..\..\..\..\Data\blocks\15\puzzle.cond"));
+            var puzzle15 = new Puzzle(File.ReadAllText(@"..\..\..\..\Data\blocks\15\puzzle.cond"), 3133337);
             var map15 = @"..\..\..\..\Data\blocks\15\puzzle.cond.desc";
             puzzle15.EnsureMapIsValid(map15);
         }
@@ -40,7 +40,7 @@ namespace Icfpc2019.Tests
                     continue;
                 }
 
-                var puzzle = new Puzzle(File.ReadAllText($@"..\..\..\..\Data\blocks\{bn}\puzzle.cond"));
+                var puzzle = new Puzzle(File.ReadAllText($@"..\..\..\..\Data\blocks\{bn}\puzzle.cond"), 3133337);
                 var map = $@"..\..\..\..\Data\blocks\{bn}\puzzle.cond.desc";
                 try
                 {
