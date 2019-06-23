@@ -30,13 +30,14 @@
         {
             var metaInfo = await FetchApiAsync("getblockchaininfo", null);
             var blockNum = metaInfo["block"].Value<int>();
+            var blockSubs = metaInfo["block_subs"].Value<int>();
             var blockInfo = await FetchApiAsync("getblockinfo", blockNum.ToString());
             var blockTs = DateTimeOffset.FromUnixTimeSeconds((int)blockInfo["block_ts"].Value<double>());
             var blockAge = DateTimeOffset.UtcNow - blockTs;
             var puzzleText = blockInfo["puzzle"].Value<string>();
             var taskText = blockInfo["task"].Value<string>();
 
-            Console.WriteLine($"Current block: #{blockNum}, aged {blockAge}");
+            Console.WriteLine($"Current block: #{blockNum}, aged {blockAge}, {blockSubs} submissions");
 
             var solutionDir = FindSolutionDir();
             var blockDir = Path.Combine(solutionDir, $@"Data\blocks\{blockNum}");
