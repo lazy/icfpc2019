@@ -21,15 +21,17 @@
             Move.Up,
             Move.Down,
         };
-
-        public Command[][] Solve(State state)
+        public IEnumerable<Command[]> Solve(State state)
         {
             if (state.BotsCount > 1)
             {
                 throw new Exception("This strategy works only with 1 bot");
             }
 
-            return new[] { this.Solve1(state.Map).ToArray() };
+            foreach (var cmd in this.Solve1(state.Map))
+            {
+                yield return new[] { cmd };
+            }
         }
 
         public IEnumerable<Command> Solve1(Map map)
