@@ -163,7 +163,7 @@ namespace Icfpc2019.Solution
         {
             // Some invariants are easier to check on the raw map
             var tokens = File.ReadAllText(mapFile).Split('#');
-            Ensure(tokens[2] != string.Empty, "The puzzle-solving task may have no obstacles", 2);
+            Ensure(tokens[2] == string.Empty, "The puzzle-solving task may have no obstacles", 2);
 
             var rawContour = tokens[0].Split("),").Select(Point.Parse).Select(CorrectPoint).ToArray();
             var vCount = rawContour.Length;
@@ -211,19 +211,19 @@ namespace Icfpc2019.Solution
             }
 
             // We can now load a proper map
-            var map = MapParser.Parse(mapFile);
+            var map = MapParser.Parse(File.ReadAllText(mapFile));
             var mapInterior = map.CellsToVisit
                 .Select(p => CorrectPoint(new Point { X = p.Item1, Y = p.Item2 }))
                 .ToArray();
 
             foreach (var inSq in this.insidePoints)
             {
-                Ensure(mapInterior.Contains(inSq), "Inside point {inSq} is not inside", 9);
+                Ensure(mapInterior.Contains(inSq), $"Inside point {inSq} is not inside", 9);
             }
 
             foreach (var outSq in this.outsidePoints)
             {
-                Ensure(!mapInterior.Contains(outSq), "Outside point {outSq} is inside", 10);
+                Ensure(!mapInterior.Contains(outSq), $"Outside point {outSq} is inside", 10);
             }
 
             var startPoint = new Point { X = map.StartX, Y = map.StartY };
@@ -271,7 +271,7 @@ namespace Icfpc2019.Solution
             {
                 if (!condition)
                 {
-                    throw new Exception($"{message} (violated rule {ruleNumber}");
+                    throw new Exception($"{message} (violated rule {ruleNumber})");
                 }
             }
         }
