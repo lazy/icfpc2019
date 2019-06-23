@@ -90,7 +90,7 @@
             var extSolutionFile = $"{taskFile}.ext-sol";
             var solutionFile = $"{taskFile}.sol";
 
-            // if (!File.Exists(extSolutionFile))
+            if (!File.Exists(extSolutionFile))
             {
                 Console.WriteLine("Solving task");
 
@@ -106,8 +106,9 @@
                 var solutions = strategies.AsParallel()
                     .Select(strategy => Emulator.MakeExtendedSolution(map, strategy));
 
-                // solve until one minute is left
-                var timeToSolve = blockAge.TotalMilliseconds - (30 * 1000);
+                // Block lives for 15 minutes, lets try to solve everything by 14:30
+                var blockLifetimeMs = ((15 * 60) - 30) * 1000;
+                var timeToSolve = blockLifetimeMs - blockAge.TotalMilliseconds;
                 Console.WriteLine($"Time to solve: {timeToSolve} ms");
 
                 var numTried = 0;
