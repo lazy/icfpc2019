@@ -25,43 +25,28 @@
             }
         }
 
-        public static ExtendedSolution MakeExtendedSolution(Map map, string strategyName, Command[][] moves)
+        public static ExtendedSolution MakeExtendedSolution(Map map, string strategyName, IEnumerable<Command[]> commands)
         {
-            var (isValid, timeUnits) = IsValidSolution(map, moves);
+            var (isValid, timeUnits) = IsValidSolution(map, commands);
             return new ExtendedSolution(
                 isSuccessful: isValid,
                 timeUnits: timeUnits,
                 comment: isValid ? "valid" : "invalid",
                 strategyName: strategyName,
                 gitCommitId: GitInfo.GitCommit,
-                moves: moves);
+                commands: commands);
         }
 
-        public static (bool isValid, int? timeUnits) IsValidSolution(Map map, Command[][] commands)
+        public static (bool isValid, int? timeUnits) IsValidSolution(Map map, IEnumerable<Command[]> commands)
         {
             State? state = new State(map);
             var timeUnits = 0;
 
-            var commandsPerBot = commands.Select(cmd => cmd.AsEnumerable().GetEnumerator()).ToArray();
+            var buf = new List<Command[]>();
 
-            while (true)
+            foreach (var stepCommands in commands)
             {
-                var stepCommands = new Command[state.BotsCount];
-                var hasCommands = false;
-                for (var i = 0; i < state.BotsCount; ++i)
-                {
-                    if (commandsPerBot[i].MoveNext())
-                    {
-                        stepCommands[i] = commandsPerBot[i].Current;
-                        hasCommands = true;
-                    }
-                }
-
-                if (!hasCommands)
-                {
-                    break;
-                }
-
+                buf.Add(stepCommands);
                 state = state.Next(stepCommands);
                 if (state == null)
                 {

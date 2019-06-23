@@ -2,10 +2,12 @@
 {
     using System;
     using System.Collections.Generic;
-    using System.Data;
+    using System.Drawing;
 
     public struct DistsFromCenter
     {
+        private const int RectDim = 5;
+
         private readonly int[,] cellDists;
 
         public DistsFromCenter(State state)
@@ -44,6 +46,52 @@
         }
 
         public int GetDist(int x, int y) => this.cellDists[x, y];
+
+        public Bitmap SaveToBitmap()
+        {
+            var width = this.cellDists.GetLength(0);
+            var height = this.cellDists.GetLength(1);
+
+            var bmp = new Bitmap(RectDim * width, RectDim * height);
+            using var g = Graphics.FromImage(bmp);
+
+            g.ScaleTransform(1.0f, -1.0f);
+            g.TranslateTransform(0.0f, -height * RectDim);
+
+            void DrawRect(Brush b, int x, int y)
+            {
+                g.FillRectangle(b, x * RectDim, y * RectDim, RectDim, RectDim);
+            }
+
+            var maxDist = 0;
+            for (var x = 0; x < this.cellDists.GetLength(0); ++x)
+            {
+                for (var y = 0; y < this.cellDists.GetLength(1); ++y)
+                {
+                    maxDist = Math.Max(maxDist, this.cellDists[x, y]);
+                }
+            }
+
+            var distToBrush = new Brush[maxDist + 1];
+            distToBrush[0] = Brushes.Bisque;
+
+            for (int i = 1; i <= maxDist; ++i)
+            {
+                var c = (i * 255) / maxDist;
+                distToBrush[i] = new SolidBrush(Color.FromArgb(c, c, c));
+            }
+
+            for (var x = 0; x < this.cellDists.GetLength(0); ++x)
+            {
+                for (var y = 0; y < this.cellDists.GetLength(1); ++y)
+                {
+                    var brush = distToBrush[this.cellDists[x, y]];
+                    DrawRect(brush, x, y);
+                }
+            }
+
+            return bmp;
+        }
 
         private (int, int) FindGraphCenter(State state)
         {

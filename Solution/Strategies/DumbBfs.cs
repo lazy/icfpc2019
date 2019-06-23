@@ -22,8 +22,27 @@
             Move.Down,
         };
 
-        public Command[][] Solve(State state) =>
-            new[] { this.Solve1(state.Map).ToArray() };
+        private readonly bool enableBoosters;
+
+        public DumbBfs(bool enableBoosters = true)
+        {
+            this.enableBoosters = enableBoosters;
+        }
+
+        public string Name => $"{nameof(DumbBfs)}{(this.enableBoosters ? string.Empty : "NoBoost")}";
+
+        public IEnumerable<Command[]> Solve(State state)
+        {
+            if (state.BotsCount > 1)
+            {
+                throw new Exception("This strategy works only with 1 bot");
+            }
+
+            foreach (var cmd in this.Solve1(state.Map))
+            {
+                yield return new[] { cmd };
+            }
+        }
 
         public IEnumerable<Command> Solve1(Map map)
         {
@@ -39,7 +58,7 @@
             {
                 if (map.IsFree(startPoint.X, startPoint.Y))
                 {
-                    if (map[startPoint.X, startPoint.Y] == Map.Cell.ManipulatorExtension)
+                    if (this.enableBoosters && map[startPoint.X, startPoint.Y] == Map.Cell.ManipulatorExtension)
                     {
                         if (positiveExtension == negativeExtension)
                         {
@@ -53,12 +72,12 @@
                         }
                     }
 
-                    if (map[startPoint.X, startPoint.Y] == Map.Cell.Drill)
+                    if (this.enableBoosters && map[startPoint.X, startPoint.Y] == Map.Cell.Drill)
                     {
                         yield return UseDrill.Instance;
                         drillTime = 30;
                     }
-                    else if (map[startPoint.X, startPoint.Y] == Map.Cell.FastWheels)
+                    else if (this.enableBoosters && map[startPoint.X, startPoint.Y] == Map.Cell.FastWheels)
                     {
                         yield return UseFastWheels.Instance;
                         speedTime = 50;

@@ -7,8 +7,48 @@
 
     public static class CommandsSerializer
     {
-        public static Command[][] Parse(string commands) =>
-            commands.Split('#').Select(cmds => ParseOneBot(cmds).ToArray()).ToArray();
+        public static IEnumerable<Command[]> Parse(string commands)
+        {
+            var transposedCommands = commands.Split('#').Select(cmds => ParseOneBot(cmds).ToArray()).ToArray();
+            return Transponse(transposedCommands);
+        }
+
+        public static IEnumerable<Command[]> Transponse(Command[][] commandsPerBot)
+        {
+            var nextCommandIdx = new int[commandsPerBot.Length];
+            var botsCount = 1;
+
+            while (true)
+            {
+                var newBotsCount = botsCount;
+                var botCommands = new Command[botsCount];
+                var hasCommands = false;
+
+                for (var i = 0; i < botsCount; ++i)
+                {
+                    var cmdIdx = nextCommandIdx[i]++;
+                    if (cmdIdx < commandsPerBot[i].Length)
+                    {
+                        var cmd = commandsPerBot[i][cmdIdx];
+                        botCommands[i] = cmd;
+                        hasCommands = true;
+
+                        if (cmd is Clone)
+                        {
+                            ++newBotsCount;
+                        }
+                    }
+                }
+
+                if (!hasCommands)
+                {
+                    yield break;
+                }
+
+                yield return botCommands;
+                botsCount = newBotsCount;
+            }
+        }
 
         public static IEnumerable<Command> ParseOneBot(string commands)
         {
@@ -55,7 +95,30 @@
             }
         }
 
-        public static string Serialize(params Command[][] commands) =>
-            string.Join('#', commands.Select(botCommands => string.Join(string.Empty, botCommands.AsEnumerable())));
+        public static string Serialize(IEnumerable<Command[]> commands)
+        {
+            var transposedCommands = new List<List<Command>>();
+
+            foreach (var stepCommands in commands)
+            {
+                var idx = 0;
+                foreach (var botCmd in stepCommands)
+                {
+                    if (idx >= transposedCommands.Count)
+                    {
+                        transposedCommands.Add(new List<Command>());
+                    }
+
+                    if (botCmd != null)
+                    {
+                        transposedCommands[idx].Add(botCmd);
+                    }
+
+                    ++idx;
+                }
+            }
+
+            return string.Join('#', transposedCommands.Select(botCommands => string.Join(string.Empty, botCommands)));
+        }
     }
 }

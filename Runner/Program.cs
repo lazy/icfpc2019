@@ -9,24 +9,19 @@
     using System.Threading.Tasks;
 
     using Icfpc2019.Solution;
-    using Icfpc2019.Solution.Strategies;
 
     public class Program
     {
+        // For debugging
+        private static readonly int? StrategiesLimit = 20;
+        private static readonly bool LogImmediately = false;
+
         public static void Main(string[] args)
         {
             var baseDir = args.Length > 0 ? args[0] : FindSolutionDir();
             Directory.SetCurrentDirectory(baseDir);
 
-            /*
-            var strategies =
-                typeof(DumbBfs).Assembly.DefinedTypes
-                    .Where(type => type.IsClass && !type.IsAbstract && typeof(IStrategy).IsAssignableFrom(type))
-                    .Select(type => (IStrategy)Activator.CreateInstance(type))
-                    .ToArray();
-            */
-
-            var strategies = LookAheadFactory.MakeStrategies().Concat(new[] { new DumbBfs(), }).ToArray();
+            var strategies = StrategyFactory.GenerateStrategies().ToArray();
 
             var totalTimeUnits = 0;
             var haveFailures = false;
@@ -35,31 +30,35 @@
 
             Parallel.ForEach(
                 Directory.EnumerateFiles("Data/maps", "*.desc"),
-                new ParallelOptions { MaxDegreeOfParallelism = 1 },
+                new ParallelOptions { MaxDegreeOfParallelism = 8 },
                 mapFile =>
                 {
                     var log = new List<string>();
-                    var mapName = Path.GetFileNameWithoutExtension(mapFile);
 
-                    if (!mapName.Contains("112"))
+                    void Log(string msg)
                     {
-                        return;
+                        if (LogImmediately)
+                        {
+                            Console.WriteLine($"{msg}");
+                        }
+                        else
+                        {
+                            log.Add(msg);
+                        }
                     }
 
-                    log.Add($"Processing {mapName}");
+                    var mapName = Path.GetFileNameWithoutExtension(mapFile);
+
+                    Log($"Processing {mapName}");
                     var map = MapParser.Parse(File.ReadAllText(mapFile));
 
-                    /*
-                    // temporary for clonning debugging
+                    // temporary for cloning debugging
                     if (map.NumCloneBoosts == 0 || map.NumSpawnPoints == 0)
                     {
                         return;
                     }
-                    */
 
                     var extSolutionPath = $"Data/extended-solutions/{mapName}.ext-sol";
-
-                    var oldBestStrategyName = (string?)null;
 
                     // Delete broken solutions
                     if (File.Exists(extSolutionPath))
@@ -70,25 +69,35 @@
                         {
                             File.Delete(extSolutionPath);
                         }
-
-                        oldBestStrategyName = oldSolution.StrategyName;
                     }
 
-                    var solutions = strategies.AsParallel()
-                        .Where(strategy => !(mapName.Contains("294") && strategy.Name.Contains("DumbBfs")))
-                        .Select(strategy => (strategy, Emulator.MakeExtendedSolution(map, strategy)))
-                        .ToArray();
+                    var rng = new Random();
+                    var currentStrategies = StrategiesLimit != null
+                        ? strategies.OrderBy(s => rng.Next()).ToArray()
+                        : strategies;
 
+                    var solutions = currentStrategies /*.AsParallel()*/
+                        .Where(strategy => !(mapName.Contains("294") && strategy.Name.Contains("DumbBfs")))
+                        .Select(strategy => (strategy, Emulator.MakeExtendedSolution(map, strategy)));
+
+                    var numSuccessful = 0;
                     foreach (var pair in solutions)
                     {
                         var (strategy, solution) = pair;
                         solution.SaveIfBetter(extSolutionPath);
-                        log.Add($"  {strategy.Name}: {solution.IsSuccessful}/{solution.TimeUnits}");
+                        if (solution.IsSuccessful)
+                        {
+                            Log($"  {strategy.Name}: {solution.TimeUnits}");
+                            if (StrategiesLimit != null && ++numSuccessful >= StrategiesLimit)
+                            {
+                                break;
+                            }
+                        }
                     }
 
                     var best = ExtendedSolution.Load(extSolutionPath);
                     File.WriteAllText($"Data/solutions/{mapName}.sol", best.Commands);
-                    log.Add($"  BEST ({best.StrategyName}): {best.IsSuccessful}/{best.TimeUnits}");
+                    Log($"  BEST ({best.StrategyName}): {best.IsSuccessful}/{best.TimeUnits}");
 
                     lock (outputLock)
                     {

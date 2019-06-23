@@ -90,56 +90,57 @@
             var extSolutionFile = $"{taskFile}.ext-sol";
             var solutionFile = $"{taskFile}.sol";
 
-            if (!File.Exists(extSolutionFile))
-            {
-                Console.WriteLine("Solving task");
+            Console.WriteLine("Solving task");
+            var sw = new Stopwatch();
+            sw.Start();
 
-                var sw = new Stopwatch();
-                sw.Start();
+            // shuffled strategies list
+            var strategies = StrategyFactory.GenerateStrategies().ToArray();
+            var rng = new Random();
+            strategies = new[] { new DumbBfs() }.Concat(strategies.OrderBy(s => rng.Next())).ToArray();
 
-                // shuffled strategies list
-                var strategies = LookAheadFactory.MakeStrategies().Concat(new[] { new DumbBfs(), }).ToArray();
-                var rng = new Random();
-                strategies = strategies.OrderBy(s => rng.Next()).ToArray();
+            // Block lives for 15 minutes, lets try to solve everything by 14:00
+            var blockLifetimeMs = 10 * 60 * 1000;
+            var timeToSolve = Math.Max(5000, blockLifetimeMs - blockAge.TotalMilliseconds);
+            Console.WriteLine($"Time to solve: {timeToSolve} ms");
 
-                // Block lives for 15 minutes, lets try to solve everything by 14:00
-                var blockLifetimeMs = 14 * 60 * 1000;
-                var timeToSolve = blockLifetimeMs - blockAge.TotalMilliseconds;
-                Console.WriteLine($"Time to solve: {timeToSolve} ms");
-
-                var map = MapParser.Parse(taskText);
-                var solutions = strategies.AsParallel().WithDegreeOfParallelism(10)
-                    .Select(
-                        strategy =>
-                        {
-                            var run = false;
-                            lock (sw)
-                            {
-                                run = sw.ElapsedMilliseconds < timeToSolve;
-                            }
-
-                            return run
-                                ? Emulator.MakeExtendedSolution(map, strategy)
-                                : Emulator.MakeExtendedSolution(map, "fail", new Command[][] { });
-                        });
-
-                var numTried = 0;
-                foreach (var sln in solutions)
-                {
-                    if (sln.IsSuccessful)
+            var map = MapParser.Parse(taskText);
+            var solutions = strategies.AsParallel().WithDegreeOfParallelism(10)
+                .Select(
+                    strategy =>
                     {
-                        ++numTried;
-                    }
+                        var run = false;
+                        lock (sw)
+                        {
+                            run = sw.ElapsedMilliseconds < timeToSolve;
+                        }
 
-                    sln.SaveIfBetter(extSolutionFile);
+                        return run
+                            ? Emulator.MakeExtendedSolution(map, strategy)
+                            : Emulator.MakeExtendedSolution(map, "fail", new Command[][] { });
+                    });
+
+            var numSuccess = 0;
+            foreach (var sln in solutions)
+            {
+                if (sln.IsSuccessful)
+                {
+                    ++numSuccess;
                 }
 
-                Console.WriteLine($" Solution took: {sw.ElapsedMilliseconds} ms, {numTried} strategies out of {strategies.Length} tried");
+                sln.SaveIfBetter(extSolutionFile);
             }
 
-            var extSlnLines = File.ReadAllLines(extSolutionFile);
-            Trace.Assert(extSlnLines.Length > 0);
-            File.WriteAllText(solutionFile, extSlnLines.Last());
+            Console.WriteLine($" Solution took: {sw.ElapsedMilliseconds} ms, {numSuccess} strategies out of {strategies.Length} successed");
+
+            var extSolution = ExtendedSolution.Load(extSolutionFile);
+
+            if (!extSolution.IsSuccessful)
+            {
+                throw new Exception("ext solution is not successful!");
+            }
+
+            File.WriteAllText(solutionFile, extSolution.Commands);
 
             var submissionResultFile = Path.Combine(blockDir, "submit.txt");
 

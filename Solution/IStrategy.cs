@@ -6,6 +6,6 @@
     {
         string Name => this.GetType().Name;
 
-        Command[][] Solve(State state);
+        IEnumerable<Command[]> Solve(State state);
     }
 }
