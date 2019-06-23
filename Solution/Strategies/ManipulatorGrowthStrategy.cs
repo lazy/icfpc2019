@@ -100,7 +100,7 @@
                         4 => (0, this.initSign),
                         5 => (0, -this.initSign),
                         6 => (-1, this.initSign),
-                        7 => (-1, this.initSign),
+                        7 => (-1, -this.initSign),
                         8 => (-1, 0),
                         _ => throw new Exception("impossible"),
                         });
