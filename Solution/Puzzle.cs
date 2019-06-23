@@ -4,6 +4,7 @@ namespace Icfpc2019.Solution
     using System.Collections.Generic;
     using System.Diagnostics;
     using System.Drawing;
+    using System.IO;
     using System.Linq;
     using System.Text;
 
@@ -156,6 +157,123 @@ namespace Icfpc2019.Solution
             SelectBoosters('X', this.xNum);
 
             return $"{contourPointsStr}#{FmtPoint(startPos)}##{boosters}";
+        }
+
+        public void EnsureMapIsValid(string mapFile)
+        {
+            // Some invariants are easier to check on the raw map
+            var tokens = File.ReadAllText(mapFile).Split('#');
+            Ensure(tokens[2] != string.Empty, "The puzzle-solving task may have no obstacles", 2);
+
+            var rawContour = tokens[0].Split("),").Select(Point.Parse).Select(CorrectPoint).ToArray();
+            var vCount = rawContour.Length;
+            Ensure(
+                vCount >= this.vMin && vCount <= this.vMax,
+                $"Expected to have at least {this.vMin} and at most {this.vMax} vertices, got {vCount}",
+                7);
+
+            var rawContourPoints = new AllPoints();
+            foreach (var p in rawContour)
+            {
+                rawContourPoints.Update(p);
+            }
+
+            var minSize = this.tSize - Math.Floor(0.1 * this.tSize);
+
+            Ensure(rawContourPoints.MaxX >= minSize, $"Map max X should be no less than {minSize}", 5);
+            Ensure(rawContourPoints.MaxY >= minSize, $"Map max Y should be no less than {minSize}", 5);
+            Ensure(rawContourPoints.MaxX <= this.tSize, $"Map max X should be at most {this.tSize}", 4);
+            Ensure(rawContourPoints.MaxY <= this.tSize, $"Map max Y should be at most {this.tSize}", 4);
+
+            var totalArea = 0.0;
+            for (var idx = 0; idx < rawContour.Length; ++idx)
+            {
+                var p1 = rawContour[idx];
+                var p2 = rawContour[(idx + 1) % rawContour.Length];
+                totalArea += p1.X * p2.Y;
+                totalArea -= p1.Y * p2.X;
+            }
+
+            totalArea /= 2;
+            var minArea = Math.Ceiling(0.2 * this.tSize * this.tSize);
+
+            Ensure(totalArea >= minArea, $"Map area should be at least {minArea}", 6);
+
+            for (var idx = 0; idx < rawContour.Length; ++idx)
+            {
+                var p1 = rawContour[idx];
+                var p2 = rawContour[(idx + 1) % rawContour.Length];
+                var p3 = rawContour[(idx + 2) % rawContour.Length];
+
+                Ensure(p1 != p2, $"Identical points: {p1} an {p2}", 1);
+                Ensure(!(p1.X == p2.X && p2.X == p3.X), $"Collinear points: {p1}, {p2}, {p3}", 1);
+                Ensure(!(p1.Y == p2.Y && p2.Y == p3.Y), $"Collinear points: {p1}, {p2}, {p3}", 1);
+            }
+
+            // We can now load a proper map
+            var map = MapParser.Parse(mapFile);
+            var mapInterior = map.CellsToVisit
+                .Select(p => CorrectPoint(new Point { X = p.Item1, Y = p.Item2 }))
+                .ToArray();
+
+            foreach (var inSq in this.insidePoints)
+            {
+                Ensure(mapInterior.Contains(inSq), "Inside point {inSq} is not inside", 9);
+            }
+
+            foreach (var outSq in this.outsidePoints)
+            {
+                Ensure(!mapInterior.Contains(outSq), "Outside point {outSq} is inside", 10);
+            }
+
+            var startPoint = new Point { X = map.StartX, Y = map.StartY };
+            Ensure(mapInterior.Contains(startPoint), "The initial position is outside", 3);
+
+            var mNumValid = 0;
+            var fNumValid = 0;
+            var dNumValid = 0;
+            var rNumValid = 0;
+            var cNumValid = 0;
+            var xNumValid = 0;
+            foreach (var p in mapInterior)
+            {
+                switch (map[p.X, p.Y])
+                {
+                    case Map.Cell.ManipulatorExtension:
+                        ++mNumValid;
+                        break;
+                    case Map.Cell.FastWheels:
+                        ++fNumValid;
+                        break;
+                    case Map.Cell.Drill:
+                        ++dNumValid;
+                        break;
+                    case Map.Cell.Teleport:
+                        ++rNumValid;
+                        break;
+                    case Map.Cell.Clone:
+                        ++cNumValid;
+                        break;
+                    case Map.Cell.SpawnPoint:
+                        ++xNumValid;
+                        break;
+                }
+            }
+
+            Ensure(mNumValid == this.mNum, $"Expected {this.mNum} valid manipulator extensions, got {mNumValid}", 8);
+            Ensure(fNumValid == this.fNum, $"Expected {this.fNum} valid fast wheels, got {fNumValid}", 8);
+            Ensure(dNumValid == this.dNum, $"Expected {this.dNum} valid drills, got {dNumValid}", 8);
+            Ensure(rNumValid == this.rNum, $"Expected {this.rNum} valid teleports, got {rNumValid}", 8);
+            Ensure(cNumValid == this.cNum, $"Expected {this.cNum} valid clones, got {cNumValid}", 8);
+            Ensure(xNumValid == this.xNum, $"Expected {this.xNum} valid spawn points, got {xNumValid}", 8);
+
+            void Ensure(bool condition, string message, int ruleNumber)
+            {
+                if (!condition)
+                {
+                    throw new Exception($"{message} (violated rule {ruleNumber}");
+                }
+            }
         }
 
         private static Point CorrectPoint(Point p)
