@@ -5,7 +5,6 @@
     using System.IO;
     using System.IO.Compression;
     using System.Linq;
-    using System.Reflection.Metadata.Ecma335;
     using System.Threading.Tasks;
 
     using Icfpc2019.Solution;
@@ -23,7 +22,7 @@
 
             var strategies = StrategyFactory.GenerateStrategies().ToArray();
             var packFile = "Data/booster-pack.txt";
-            string packedBoosters = File.Exists(packFile) ? File.ReadAllText(packFile) : string.Empty;
+            var mapToPack = File.ReadAllLines(packFile).Select(line => line.Split(' ')).ToDictionary(tokens => tokens[0], tokens => tokens[1]);
 
             var totalTimeUnits = 0;
             var haveFailures = false;
@@ -51,6 +50,7 @@
 
                     var mapName = Path.GetFileNameWithoutExtension(mapFile);
 
+                    string packedBoosters = mapToPack.ContainsKey(mapName) ? mapToPack[mapName] : string.Empty;
                     Log($"Processing {mapName} with extra boosters: [{packedBoosters}]");
                     var map = MapParser.Parse(File.ReadAllText(mapFile), packedBoosters);
                     var solutionSuffix = packedBoosters != string.Empty ? "-packed" : string.Empty;
