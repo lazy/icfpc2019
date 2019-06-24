@@ -60,8 +60,14 @@
             {
                 Console.WriteLine("Solving puzzle");
                 var seed = 3133337;
+                var tries = 0;
                 while (true)
                 {
+                    if (++tries == 200)
+                    {
+                        throw new Exception("Faile to solve puzzle!");
+                    }
+
                     Console.WriteLine($"Solving puzzle with seed {seed}");
                     var puzzle = new Puzzle(puzzleText, seed);
                     File.WriteAllText(puzzleSolutionFile, puzzle.SaveToMap());
