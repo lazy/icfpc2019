@@ -7,7 +7,7 @@ namespace Icfpc2019.Solution
 
     public class MapParser
     {
-        public static Map Parse(string description)
+        public static Map Parse(string description, string boosterPack)
         {
             var tokens = description.Split("#");
             var allPoints = new AllPoints();
@@ -29,7 +29,25 @@ namespace Icfpc2019.Solution
 
             ParseBoosters(tokens[3], cells);
 
-            return new Map(startPoint.X, startPoint.Y, cells);
+            var initialManipulatorCount = 0;
+            var initialCloneCount = 0;
+
+            foreach (var ch in boosterPack)
+            {
+                switch (ch)
+                {
+                    case 'B':
+                        ++initialManipulatorCount;
+                        break;
+                    case 'C':
+                        ++initialCloneCount;
+                        break;
+                    default:
+                        break;
+                }
+            }
+
+            return new Map(startPoint.X, startPoint.Y, cells, initialManipulatorCount, initialCloneCount);
         }
 
         private static void ParseBoosters(string description, Map.Cell[,] cells)

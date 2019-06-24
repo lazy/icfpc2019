@@ -8,8 +8,9 @@
     {
         private readonly Cell[,] cells;
         private readonly HashSet<(int, int)> cellsToVisit;
+        private readonly List<(int, int)> cellsToVisitSortedByDistance = new List<(int, int)>();
 
-        public Map(int startX, int startY, Cell[,] cells)
+        public Map(int startX, int startY, Cell[,] cells, int packedManipulators, int packedClones)
         {
             this.StartX = startX;
             this.StartY = startY;
@@ -47,6 +48,30 @@
                             break;
                     }
                 }
+            }
+
+            var nextFreeCellIndex = 0;
+            while ((packedManipulators > 0 || packedClones > 0) && nextFreeCellIndex < this.cellsToVisitSortedByDistance.Count)
+            {
+                var (freeX, freeY) = this.cellsToVisitSortedByDistance[nextFreeCellIndex++];
+                if (this.IsFree(freeX, freeY) && this[freeX, freeY] == Cell.Empty)
+                {
+                    if (packedClones > 0)
+                    {
+                        this.cells[freeX, freeY] = Cell.Clone;
+                        --packedClones;
+                    }
+                    else
+                    {
+                        this.cells[freeX, freeY] = Cell.ManipulatorExtension;
+                        --packedManipulators;
+                    }
+                }
+            }
+
+            if (packedManipulators > 0 || packedClones > 0)
+            {
+                throw new Exception("Not enough space to accomodate packed boosters");
             }
 
             this.DistsFromCenter = new DistsFromCenter(new State(this));
@@ -123,7 +148,7 @@
 
             var (startX, startY) = startPosition ?? throw new ArgumentException("Initial position was not found");
 
-            return new Map(startX, startY, cells);
+            return new Map(startX, startY, cells, 0, 0);
         }
 
         public bool InBounds(int x, int y)
@@ -258,7 +283,8 @@
         private void FindCellsToVisit()
         {
             var queue = new Queue<(int, int)>();
-            queue.Enqueue((this.StartX, this.StartY));
+            var startPoint = (this.StartX, this.StartY);
+            queue.Enqueue(startPoint);
 
             while (queue.Count > 0)
             {
@@ -267,6 +293,11 @@
                 if (!this.cellsToVisit.Contains(point))
                 {
                     this.cellsToVisit.Add(point);
+                    if (point != startPoint)
+                    {
+                        this.cellsToVisitSortedByDistance.Add(point);
+                    }
+
                     Add(-1, 0);
                     Add(1, 0);
                     Add(0, -1);

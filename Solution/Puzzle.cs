@@ -213,7 +213,7 @@ namespace Icfpc2019.Solution
             }
 
             // We can now load a proper map
-            var map = MapParser.Parse(File.ReadAllText(mapFile));
+            var map = MapParser.Parse(File.ReadAllText(mapFile), string.Empty);
             var mapInterior = map.CellsToVisit
                 .Select(p => CorrectPoint(new Point { X = p.Item1, Y = p.Item2 }))
                 .ToArray();

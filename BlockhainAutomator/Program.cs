@@ -104,7 +104,7 @@
             var timeToSolve = Math.Max(5000, blockLifetimeMs - blockAge.TotalMilliseconds);
             Console.WriteLine($"Time to solve: {timeToSolve} ms");
 
-            var map = MapParser.Parse(taskText);
+            var map = MapParser.Parse(taskText, string.Empty);
             var solutions = strategies.AsParallel().WithDegreeOfParallelism(10)
                 .Select(
                     strategy =>
@@ -116,8 +116,8 @@
                         }
 
                         return run
-                            ? Emulator.MakeExtendedSolution(map, strategy)
-                            : Emulator.MakeExtendedSolution(map, "fail", new Command[][] { });
+                            ? Emulator.MakeExtendedSolution(map, strategy, string.Empty)
+                            : Emulator.MakeExtendedSolution(map, "fail", new Command[][] { }, string.Empty);
                     });
 
             var numSuccess = 0;

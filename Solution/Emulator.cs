@@ -7,11 +7,11 @@
 
     public static class Emulator
     {
-        public static ExtendedSolution MakeExtendedSolution(Map map, IStrategy strategy)
+        public static ExtendedSolution MakeExtendedSolution(Map map, IStrategy strategy, string boosterPack)
         {
             try
             {
-                return MakeExtendedSolution(map, strategy.Name, strategy.Solve(new State(map)));
+                return MakeExtendedSolution(map, strategy.Name, strategy.Solve(new State(map)), boosterPack);
             }
             catch (Exception ex)
             {
@@ -21,11 +21,12 @@
                     comment: ex.Message.Replace("\n", "\\n"),
                     strategyName: strategy.Name,
                     gitCommitId: GitInfo.GitCommit,
-                    commands: string.Empty);
+                    commands: string.Empty,
+                    boosterPack: string.Empty);
             }
         }
 
-        public static ExtendedSolution MakeExtendedSolution(Map map, string strategyName, IEnumerable<Command[]> commands)
+        public static ExtendedSolution MakeExtendedSolution(Map map, string strategyName, IEnumerable<Command[]> commands, string boosterPack)
         {
             var (isValid, timeUnits) = IsValidSolution(map, commands);
             return new ExtendedSolution(
@@ -34,7 +35,8 @@
                 comment: isValid ? "valid" : "invalid",
                 strategyName: strategyName,
                 gitCommitId: GitInfo.GitCommit,
-                commands: commands);
+                commands: commands,
+                boosterPack: boosterPack);
         }
 
         public static (bool isValid, int? timeUnits) IsValidSolution(Map map, IEnumerable<Command[]> commands)

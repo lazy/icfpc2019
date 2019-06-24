@@ -11,7 +11,7 @@
         [Fact]
         public void CanCalcDists()
         {
-            var map = MapParser.Parse(File.ReadAllText("../../../../Data/maps/prob-067.desc"));
+            var map = MapParser.Parse(File.ReadAllText("../../../../Data/maps/prob-067.desc"), string.Empty);
             var dists = new DistsFromCenter(new State(map));
             var bmp = dists.SaveToBitmap();
             bmp.Save("../../../../prob.png");

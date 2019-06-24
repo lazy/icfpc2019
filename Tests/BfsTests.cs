@@ -21,11 +21,11 @@
         [Fact]
         public void RunDifferentBfs()
         {
-            var map = MapParser.Parse(File.ReadAllText("../../../../Data/maps/prob-142.desc"));
+            var map = MapParser.Parse(File.ReadAllText("../../../../Data/maps/prob-142.desc"), string.Empty);
 
             void Measure(IStrategy strat)
             {
-                var solution = Emulator.MakeExtendedSolution(map, strat);
+                var solution = Emulator.MakeExtendedSolution(map, strat, string.Empty);
                 File.WriteAllText($"../../../../Data/prob-142-{solution.StrategyName}.sol", solution.Commands);
                 this.testOutputHelper.WriteLine($"{strat.Name}: {solution.TimeUnits}");
             }

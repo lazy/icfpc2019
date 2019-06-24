@@ -16,14 +16,16 @@
             string comment,
             string strategyName,
             string gitCommitId,
-            IEnumerable<Command[]> commands)
+            IEnumerable<Command[]> commands,
+            string boosterPack)
             : this(
                 isSuccessful,
                 timeUnits,
                 comment,
                 strategyName,
                 gitCommitId,
-                CommandsSerializer.Serialize(commands))
+                CommandsSerializer.Serialize(commands),
+                boosterPack)
         {
         }
 
@@ -33,7 +35,8 @@
             string comment,
             string strategyName,
             string gitCommitId,
-            string commands)
+            string commands,
+            string boosterPack)
         {
             this.IsSuccessful = isSuccessful;
             this.TimeUnits = timeUnits;
@@ -41,6 +44,7 @@
             this.StrategyName = strategyName;
             this.GitCommitId = gitCommitId;
             this.Commands = commands;
+            this.BoosterPack = boosterPack;
         }
 
         public string? Comment { get; }
@@ -50,6 +54,7 @@
         public string Commands { get; }
         public string StrategyName { get; }
         public int? TimeUnits { get; }
+        public string BoosterPack { get; }
 
         public static ExtendedSolution Load(string filename)
         {
@@ -60,7 +65,8 @@
                 comment: stream.ReadLine(),
                 strategyName: stream.ReadLine(),
                 gitCommitId: stream.ReadLine(),
-                commands: stream.ReadLine());
+                commands: stream.ReadLine(),
+                boosterPack: stream.ReadLine() ?? string.Empty);
         }
 
         public bool IsBetterThan(ExtendedSolution that) =>
@@ -89,6 +95,7 @@
             stream.WriteLine(this.StrategyName);
             stream.WriteLine(this.GitCommitId);
             stream.WriteLine(this.Commands);
+            stream.WriteLine(this.BoosterPack);
         }
     }
 }
