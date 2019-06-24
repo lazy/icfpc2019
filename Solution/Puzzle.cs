@@ -80,26 +80,25 @@ namespace Icfpc2019.Solution
 
         public Bitmap SaveToBitmap()
         {
-            const int pDelta = 1;
-            var totalWidth = RectDim * this.tSize;
-            var totalHeight = RectDim * this.tSize;
-            var bmp = new Bitmap(totalWidth, totalHeight + pDelta);
-            for (var x = 0; x < bmp.Width; ++x)
-            {
-                for (var y = 0; y < bmp.Height; ++y)
-                {
-                    bmp.SetPixel(x, y, Color.Bisque);
-                }
-            }
-
+            var totalWidth = Math.Max(this.allPoints.MaxX, this.tSize) + 1;
+            var totalHeight = Math.Max(this.allPoints.MaxY, this.tSize) + 1;
+            var bmp = new Bitmap(RectDim * totalWidth, RectDim * totalHeight);
             using (var g = Graphics.FromImage(bmp))
             {
                 g.ScaleTransform(1.0f, -1.0f);
-                g.TranslateTransform(0.0f, -totalHeight);
+                g.TranslateTransform(0.0f, -totalHeight * RectDim);
 
                 void DrawRect(Brush b, int x, int y)
                 {
                     g.FillRectangle(b, x * RectDim, y * RectDim, RectDim, RectDim);
+                }
+
+                for (var x = 0; x < totalWidth; ++x)
+                {
+                    for (var y = 0; y < totalHeight; ++y)
+                    {
+                        DrawRect(Brushes.Bisque, x, y);
+                    }
                 }
 
                 foreach (var p in this.insidePoints)
@@ -114,6 +113,7 @@ namespace Icfpc2019.Solution
 
                 foreach (var p in this.contourPoints)
                 {
+                    const int pDelta = 1;
                     g.FillEllipse(Brushes.Red, (p.X * RectDim) - pDelta, (p.Y * RectDim) - pDelta, 2 * pDelta, 2 * pDelta);
                 }
             }
@@ -411,8 +411,8 @@ namespace Icfpc2019.Solution
                 {
                     while (prev.ContainsKey(cur))
                     {
-                        cur = prev[cur];
                         this.outsidePoints.Add(cur);
+                        cur = prev[cur];
                     }
 
                     break;
