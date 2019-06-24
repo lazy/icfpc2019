@@ -22,6 +22,30 @@
             var numCloneBoosts = 0;
             var numSpawnPoints = 0;
 
+            var nextFreeCellIndex = 0;
+            while ((packedManipulators > 0 || packedClones > 0) && nextFreeCellIndex < this.cellsToVisitSortedByDistance.Count)
+            {
+                var (freeX, freeY) = this.cellsToVisitSortedByDistance[nextFreeCellIndex++];
+                if (this.IsFree(freeX, freeY) && this[freeX, freeY] == Cell.Empty)
+                {
+                    if (packedClones > 0)
+                    {
+                        this.cells[freeX, freeY] = Cell.Clone;
+                        --packedClones;
+                    }
+                    else
+                    {
+                        this.cells[freeX, freeY] = Cell.ManipulatorExtension;
+                        --packedManipulators;
+                    }
+                }
+            }
+
+            if (packedManipulators > 0 || packedClones > 0)
+            {
+                throw new Exception("Not enough space to accomodate packed boosters");
+            }
+
             // Mark all inaccessible free cells as edge
             for (var x = 0; x < this.Width; ++x)
             {
@@ -48,30 +72,6 @@
                             break;
                     }
                 }
-            }
-
-            var nextFreeCellIndex = 0;
-            while ((packedManipulators > 0 || packedClones > 0) && nextFreeCellIndex < this.cellsToVisitSortedByDistance.Count)
-            {
-                var (freeX, freeY) = this.cellsToVisitSortedByDistance[nextFreeCellIndex++];
-                if (this.IsFree(freeX, freeY) && this[freeX, freeY] == Cell.Empty)
-                {
-                    if (packedClones > 0)
-                    {
-                        this.cells[freeX, freeY] = Cell.Clone;
-                        --packedClones;
-                    }
-                    else
-                    {
-                        this.cells[freeX, freeY] = Cell.ManipulatorExtension;
-                        --packedManipulators;
-                    }
-                }
-            }
-
-            if (packedManipulators > 0 || packedClones > 0)
-            {
-                throw new Exception("Not enough space to accomodate packed boosters");
             }
 
             this.DistsFromCenter = new DistsFromCenter(new State(this));
