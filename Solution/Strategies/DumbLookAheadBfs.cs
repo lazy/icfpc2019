@@ -79,6 +79,7 @@
 
             // Used only by RunBfs() and FindSmallZones()
             var bfs = new BfsState(map);
+            var distsFromCenter = map.DistsFromCenter;
 
             var globalZoneToVisit = map.CellsToVisit.ToHashSet();
 
@@ -145,6 +146,25 @@
                 }
             }
 
+            int CalcProfit(List<(int, int)> touchedCells)
+            {
+                var bot = masterState.GetBot(0);
+                var edgeCells = 0;
+                foreach (var cell in touchedCells)
+                {
+                    var (x, y) = cell;
+                    if (!IsFree(x + 1, y) || !IsFree(x - 1, y) || !IsFree(x, y + 1) || !IsFree(x, y - 1))
+                    {
+                        edgeCells += 1;
+                    }
+                }
+
+                return touchedCells.Count + (10 * edgeCells);
+
+                bool IsFree(int x, int y) =>
+                    map.IsFree(x, y); // && !masterState.IsWrapped(x, y);
+            }
+
             (Command? command, int profit) MeasureTurnProfit(
                 State state,
                 HashSet<(int, int)> zone,
@@ -152,18 +172,25 @@
                 int lookAhead,
                 List<Command>? firstPath = null)
             {
+                var touchedCells = new List<(int, int)>();
+
                 if (firstCommand != null)
                 {
-                    var nextState = state.Next(firstCommand);
+                    var nextState = state.Next(touchedCells, firstCommand);
                     if (nextState == null)
                     {
-                        return (null, state.WrappedCellsCount);
+                        return (null, 0);
                     }
 
                     state = nextState;
                 }
 
-                var (firstBfsCommand, bfsProfit) = RepeatBfs(state, zone, 1 + lookAhead, firstPath);
+                var afterFirstSize = touchedCells.Count;
+
+                var firstBfsCommand = RepeatBfs(state, zone, 1 + lookAhead, touchedCells, firstPath);
+                var bfsProfit = CalcProfit(touchedCells);
+
+                touchedCells.RemoveRange(afterFirstSize, touchedCells.Count - afterFirstSize);
 
                 if (lookAhead == 0)
                 {
@@ -175,12 +202,15 @@
                 var bestMove = (command: (Command?)firstBfsCommand, profit: bfsProfit);
                 foreach (var move in possibleMoves)
                 {
-                    var profit = move == firstBfsCommand
-                        ? bfsProfit
-                        : MeasureMoveProfit(state, zone, move, lookAhead, null);
-                    if (profit > bestMove.profit)
+                    if (move != firstBfsCommand)
                     {
-                        bestMove = (move, profit);
+                        TryMove(state, zone, move, lookAhead, touchedCells, null);
+                        var profit = CalcProfit(touchedCells);
+                        touchedCells.RemoveRange(afterFirstSize, touchedCells.Count - afterFirstSize);
+                        if (profit > bestMove.profit)
+                        {
+                            bestMove = (move, profit);
+                        }
                     }
                 }
 
@@ -189,24 +219,25 @@
                 return (firstCommand, bestMove.profit);
             }
 
-            int MeasureMoveProfit(
+            void TryMove(
                 State state,
                 HashSet<(int, int)> zone,
                 Command firstCommand,
                 int lookAhead,
+                List<(int, int)> touchedCells,
                 List<Command>? firstPath = null)
             {
-                var nextState = state.Next(firstCommand);
+                var nextState = state.Next(touchedCells, firstCommand);
                 if (nextState == null)
                 {
-                    return -1;
+                    return;
                 }
 
                 firstPath?.Add(firstCommand);
-                return RepeatBfs(nextState, zone, lookAhead, firstPath).profit;
+                RepeatBfs(nextState, zone, lookAhead, touchedCells, firstPath);
             }
 
-            (Command? command, int profit) RepeatBfs(State state, HashSet<(int, int)> zone, int times, List<Command>? firstPath)
+            Command? RepeatBfs(State state, HashSet<(int, int)> zone, int times, List<(int, int)> touchedCells, List<Command>? firstPath)
             {
                 Command? firstCmd = null;
                 while (times > 0 && RunBfs(state, zone) && bfs.Path.Count > 0)
@@ -219,11 +250,11 @@
                             firstPath?.AddRange(bfs.Path);
                         }
 
-                        state = state.Next(bfs.Path[i]) ?? throw new Exception("Impossible");
+                        state = state.Next(touchedCells, bfs.Path[i]) ?? throw new Exception("Impossible");
                     }
                 }
 
-                return (firstCmd, state.WrappedCellsCount);
+                return firstCmd;
             }
 
             bool RunBfs(State state, HashSet<(int, int)> zone)

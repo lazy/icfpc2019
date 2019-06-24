@@ -36,7 +36,8 @@
             Measure(new DumbLookAheadBfs(1));
             Measure(new DumbLookAheadBfs(2));
             Measure(new DumbLookAheadBfs(3));
-            Measure(new DumbLookAheadBfs(10));
+
+            // Measure(new DumbLookAheadBfs(10));
         }
     }
 }

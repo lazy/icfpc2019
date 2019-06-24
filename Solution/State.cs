@@ -54,7 +54,7 @@
                         remainingSpeedBoostedMoves: 0,
                         remainingDrillMoves: 0),
                 },
-                wrapped: UpdateWrappedCells(map, map.StartX, map.StartY, 0, InitManipConfig, ImHashSet.Empty, 0),
+                wrapped: UpdateWrappedCells(map, map.StartX, map.StartY, 0, InitManipConfig, ImHashSet.Empty, 0, null),
                 pickedUpBoosterCoords: ImHashSet.Empty,
                 drilledCells: ImHashSet.Empty,
                 manipulatorExtensionCount: 0,
@@ -198,7 +198,10 @@
             return (sumVis, max);
         }
 
-        public State? Next(params Command[] commands)
+        public State? Next(params Command[] commands) =>
+            this.Next(null, commands);
+
+        public State? Next(List<(int, int)>? addedWrappedCells, params Command[] commands)
         {
             if (commands.Length > this.BotsCount)
             {
@@ -244,17 +247,24 @@
                     // we expect that once commands for bot are over than nulls will be fed up indefinitely for it
                     // but do not really verify that
                     null => bot,
-                    Move move => bot.DoMove(this, move, ref newWrappedCells, ref newWrappedCellsCount, ref newDrilledCells),
-                    Turn turn => bot.DoTurn(this, turn, ref newWrappedCells, ref newWrappedCellsCount),
+                    Move move => bot.DoMove(this, move, ref newWrappedCells, ref newWrappedCellsCount, ref newDrilledCells, addedWrappedCells),
+                    Turn turn => bot.DoTurn(this, turn, ref newWrappedCells, ref newWrappedCellsCount, addedWrappedCells),
                     UseManipulatorExtension useManip => bot.AttachManip(
                         this,
                         useManip,
                         ref newManipulatorExtensionCount,
                         ref newWrappedCells,
-                        ref newWrappedCellsCount),
+                        ref newWrappedCellsCount,
+                        addedWrappedCells),
                     UseFastWheels useFastWheels => bot.UseFastWheels(ref newFastWheelsCount),
                     UseDrill useDrill => bot.UseDrill(ref newDrillsCount),
-                    Clone clone => bot.Clone(this, ref newBots, ref newCloneCount, ref newWrappedCells, ref newWrappedCellsCount),
+                    Clone clone => bot.Clone(
+                        this,
+                        ref newBots,
+                        ref newCloneCount,
+                        ref newWrappedCells,
+                        ref newWrappedCellsCount,
+                        addedWrappedCells),
                     _ => throw new ArgumentOutOfRangeException(nameof(command), command.ToString()),
                     };
 
@@ -305,7 +315,8 @@
             int dir,
             (int, int)[] manipConfig,
             ImHashSet wrappedCells,
-            int wrappedCellsCount)
+            int wrappedCellsCount,
+            List<(int, int)>? addedWrappedCells)
         {
             foreach (var delta in manipConfig)
             {
@@ -316,6 +327,7 @@
                 {
                     wrappedCells = wrappedCells.AddOrUpdate(manipCoord, true);
                     ++wrappedCellsCount;
+                    addedWrappedCells?.Add(manipCoord);
 
                     // coordsHash += HashCode.Combine(x + dx, y + dy);
                 }
@@ -425,9 +437,10 @@
                 Move move,
                 ref ImHashSet newWrappedCells,
                 ref int newWrappedCellsCount,
-                ref ImHashSet newDrilledCells)
+                ref ImHashSet newDrilledCells,
+                List<(int, int)>? addedWrappedCells)
             {
-                var bot = this.DoMoveImpl(state, move, ref newWrappedCells, ref newWrappedCellsCount, ref newDrilledCells, 1);
+                var bot = this.DoMoveImpl(state, move, ref newWrappedCells, ref newWrappedCellsCount, ref newDrilledCells, 1, addedWrappedCells);
 
                 if (bot == null)
                 {
@@ -437,7 +450,7 @@
                 // if original bot had extra moves
                 if (this.RemainingSpeedBoostedMoves > 0)
                 {
-                    bot = bot.DoMoveImpl(state, move, ref newWrappedCells, ref newWrappedCellsCount, ref newDrilledCells, 0) ?? bot;
+                    bot = bot.DoMoveImpl(state, move, ref newWrappedCells, ref newWrappedCellsCount, ref newDrilledCells, 0, addedWrappedCells) ?? bot;
                 }
 
                 return bot;
@@ -450,7 +463,8 @@
                 ref ImHashSet newWrappedCells,
                 ref int newWrappedCellsCount,
                 ref ImHashSet newDrilledCells,
-                int timeCost)
+                int timeCost,
+                List<(int, int)>? addedWrappedCells)
             {
                 var dx = move.Dx;
                 var dy = move.Dy;
@@ -476,7 +490,8 @@
                     this.Dir,
                     this.ManipConfig,
                     newWrappedCells,
-                    newWrappedCellsCount);
+                    newWrappedCellsCount,
+                    addedWrappedCells);
 
                 return this.With(x: newX, y: newY, timeCost: timeCost);
             }
@@ -486,7 +501,8 @@
                 State state,
                 Turn turn,
                 ref ImHashSet newWrappedCells,
-                ref int newWrappedCellsCount)
+                ref int newWrappedCellsCount,
+                List<(int, int)>? addedWrappedCells)
             {
                 var newDir = (this.Dir + turn.Ddir) & 3;
 
@@ -497,7 +513,8 @@
                     newDir,
                     this.ManipConfig,
                     newWrappedCells,
-                    newWrappedCellsCount);
+                    newWrappedCellsCount,
+                    addedWrappedCells);
 
                 return this.With(dir: newDir);
             }
@@ -508,7 +525,8 @@
                 UseManipulatorExtension useManip,
                 ref int newManipulatorExtensionsCount,
                 ref ImHashSet newWrappedCells,
-                ref int newWrappedCellsCount)
+                ref int newWrappedCellsCount,
+                List<(int, int)>? addedWrappedCells)
             {
                 if (--newManipulatorExtensionsCount < 0)
                 {
@@ -549,7 +567,8 @@
                     this.Dir,
                     newManipConfig,
                     newWrappedCells,
-                    newWrappedCellsCount);
+                    newWrappedCellsCount,
+                    addedWrappedCells);
 
                 return this.With(manipConfig: newManipConfig);
             }
@@ -572,7 +591,8 @@
                 ref Bot[] newBots,
                 ref int newCloneCount,
                 ref ImHashSet newWrappedCells,
-                ref int newWrappedCellsCount)
+                ref int newWrappedCellsCount,
+                List<(int, int)>? addedWrappedCells)
             {
                 if (--newCloneCount < 0 || state.Map[this.X, this.Y] != Map.Cell.SpawnPoint)
                 {
@@ -592,7 +612,8 @@
                     0,
                     InitManipConfig,
                     newWrappedCells,
-                    newWrappedCellsCount);
+                    newWrappedCellsCount,
+                    addedWrappedCells);
 
                 return this;
             }

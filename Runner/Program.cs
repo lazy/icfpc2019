@@ -12,129 +12,129 @@
     public class Program
     {
         // For debugging
-        private static readonly int? StrategiesLimit = 20;
+        private static readonly int? StrategiesLimit = 5;
         private static readonly bool LogImmediately = false;
 
         public static void Main(string[] args)
         {
-            var baseDir = args.Length > 0 ? args[0] : FindSolutionDir();
-            Directory.SetCurrentDirectory(baseDir);
+            while (true)
+            {
+                var baseDir = args.Length > 0 ? args[0] : FindSolutionDir();
+                Directory.SetCurrentDirectory(baseDir);
 
-            var strategies = StrategyFactory.GenerateStrategies().ToArray();
-            var packFile = "Data/booster-pack.txt";
-            var mapToPack = File.ReadAllLines(packFile).Select(line => line.Split(' ')).ToDictionary(tokens => tokens[0], tokens => tokens[1]);
+                var strategies = StrategyFactory.GenerateStrategies().ToArray();
+                var packFile = "Data/booster-pack.txt";
+                var mapToPack = File.ReadAllLines(packFile).Select(line => line.Split(' ')).ToDictionary(tokens => tokens[0], tokens => tokens[1]);
 
-            var totalTimeUnits = 0;
-            var haveFailures = false;
+                var totalTimeUnits = 0;
+                var haveFailures = false;
 
-            var outputLock = new object();
+                var outputLock = new object();
 
-            Parallel.ForEach(
-                Directory.EnumerateFiles("Data/maps", "*.desc"),
-                new ParallelOptions { MaxDegreeOfParallelism = 8 },
-                mapFile =>
-                {
-                    var log = new List<string>();
-
-                    void Log(string msg)
+                Parallel.ForEach(
+                    Directory.EnumerateFiles("Data/maps", "*.desc"),
+                    new ParallelOptions { MaxDegreeOfParallelism = 4 },
+                    mapFile =>
                     {
-                        if (LogImmediately)
+                        var log = new List<string>();
+
+                        void Log(string msg)
                         {
-                            Console.WriteLine($"{msg}");
-                        }
-                        else
-                        {
-                            log.Add(msg);
-                        }
-                    }
-
-                    var mapName = Path.GetFileNameWithoutExtension(mapFile);
-
-                    string packedBoosters = mapToPack.ContainsKey(mapName) ? mapToPack[mapName] : string.Empty;
-                    Log($"Processing {mapName} with extra boosters: [{packedBoosters}]");
-                    var map = MapParser.Parse(File.ReadAllText(mapFile), packedBoosters);
-                    var solutionSuffix = packedBoosters != string.Empty ? "-packed" : string.Empty;
-
-                    var extSolutionPath = $"Data/extended-solutions{solutionSuffix}/{mapName}.ext-sol";
-
-                    // Delete broken solutions
-                    if (File.Exists(extSolutionPath))
-                    {
-                        var oldSolution = ExtendedSolution.Load(extSolutionPath);
-                        var oldCommands = CommandsSerializer.Parse(oldSolution.Commands);
-                        if (!Emulator.MakeExtendedSolution(map, string.Empty, oldCommands, packedBoosters).IsSuccessful)
-                        {
-                            File.Delete(extSolutionPath);
-                        }
-                    }
-
-                    var rng = new Random();
-                    var currentStrategies = StrategiesLimit != null
-                        ? strategies.OrderBy(s => rng.Next()).ToArray()
-                        : strategies;
-
-                    var solutions = currentStrategies /*.AsParallel()*/
-                        .Where(strategy => !(mapName.Contains("294") && strategy.Name.Contains("DumbBfs")))
-                        .Select(strategy => (strategy, Emulator.MakeExtendedSolution(map, strategy, packedBoosters)));
-
-                    var numSuccessful = 0;
-                    foreach (var pair in solutions)
-                    {
-                        var (strategy, solution) = pair;
-                        solution.SaveIfBetter(extSolutionPath);
-                        if (solution.IsSuccessful)
-                        {
-                            Log($"  {strategy.Name}: {solution.TimeUnits}");
-                            if (StrategiesLimit != null && ++numSuccessful >= StrategiesLimit)
+                            if (LogImmediately)
                             {
-                                break;
+                                Console.WriteLine($"{msg}");
+                            }
+                            else
+                            {
+                                log.Add(msg);
                             }
                         }
-                    }
 
-                    var best = ExtendedSolution.Load(extSolutionPath);
-                    File.WriteAllText($"Data/solutions{solutionSuffix}/{mapName}.sol", best.Commands);
-                    if (solutionSuffix != string.Empty)
-                    {
-                        File.WriteAllText($"Data/solutions{solutionSuffix}/{mapName}.buy", packedBoosters);
-                    }
+                        var mapName = Path.GetFileNameWithoutExtension(mapFile);
 
-                    Log($"  BEST ({best.StrategyName}): {best.IsSuccessful}/{best.TimeUnits}");
-
-                    lock (outputLock)
-                    {
-                        if (best.TimeUnits.HasValue)
+                        if (!mapToPack.ContainsKey(mapName))
                         {
-                            totalTimeUnits += best.TimeUnits.Value;
-                        }
-                        else
-                        {
-                            haveFailures = true;
+                            return;
                         }
 
-                        foreach (var line in log)
+                        string packedBoosters = mapToPack.ContainsKey(mapName) ? mapToPack[mapName] : string.Empty;
+                        Log($"Processing {mapName} with extra boosters: [{packedBoosters}]");
+                        var map = MapParser.Parse(File.ReadAllText(mapFile), packedBoosters);
+                        var solutionSuffix = packedBoosters != string.Empty ? "-packed" : string.Empty;
+
+                        var extSolutionPath = $"Data/extended-solutions{solutionSuffix}/{mapName}.ext-sol";
+
+                        // Delete broken solutions
+                        if (File.Exists(extSolutionPath))
                         {
-                            Console.WriteLine(line);
+                            var oldSolution = ExtendedSolution.Load(extSolutionPath);
+                            var oldCommands = CommandsSerializer.Parse(oldSolution.Commands);
+                            if (!Emulator.MakeExtendedSolution(map, string.Empty, oldCommands, packedBoosters).IsSuccessful)
+                            {
+                                File.Delete(extSolutionPath);
+                            }
                         }
-                    }
-                });
 
-            if (haveFailures)
-            {
-                Console.WriteLine("Not printing the time unit sum some solutions were invalid");
-            }
-            else
-            {
-                Console.WriteLine($"TIME UNIT SUM = {totalTimeUnits}");
-            }
+                        var rng = new Random();
+                        var currentStrategies = StrategiesLimit != null
+                            ? strategies.OrderBy(s => rng.Next()).ToArray()
+                            : strategies;
 
-            var submissionFile = $"Data/submission.zip";
-            if (File.Exists(submissionFile))
-            {
-                File.Delete(submissionFile);
-            }
+                        var solutions = currentStrategies /*.AsParallel()*/
+                            .Where(strategy => !(mapName.Contains("294") && strategy.Name.Contains("DumbBfs")))
+                            .Select(strategy => (strategy, Emulator.MakeExtendedSolution(map, strategy, packedBoosters)));
 
-            ZipFile.CreateFromDirectory($"Data/solutions", submissionFile);
+                        var numSuccessful = 0;
+                        foreach (var pair in solutions)
+                        {
+                            var (strategy, solution) = pair;
+                            solution.SaveIfBetter(extSolutionPath);
+                            if (solution.IsSuccessful)
+                            {
+                                Log($"  {strategy.Name}: {solution.TimeUnits}");
+                                if (StrategiesLimit != null && ++numSuccessful >= StrategiesLimit)
+                                {
+                                    break;
+                                }
+                            }
+                        }
+
+                        var best = ExtendedSolution.Load(extSolutionPath);
+                        File.WriteAllText($"Data/solutions{solutionSuffix}/{mapName}.sol", best.Commands);
+                        if (solutionSuffix != string.Empty)
+                        {
+                            File.WriteAllText($"Data/solutions{solutionSuffix}/{mapName}.buy", packedBoosters);
+                        }
+
+                        Log($"  BEST ({best.StrategyName}): {best.IsSuccessful}/{best.TimeUnits}");
+
+                        lock (outputLock)
+                        {
+                            if (best.TimeUnits.HasValue)
+                            {
+                                totalTimeUnits += best.TimeUnits.Value;
+                            }
+                            else
+                            {
+                                haveFailures = true;
+                            }
+
+                            foreach (var line in log)
+                            {
+                                Console.WriteLine(line);
+                            }
+                        }
+                    });
+
+                if (haveFailures)
+                {
+                    Console.WriteLine("Not printing the time unit sum some solutions were invalid");
+                }
+                else
+                {
+                    Console.WriteLine($"TIME UNIT SUM = {totalTimeUnits}");
+                }
+            }
         }
 
         private static string FindSolutionDir()
