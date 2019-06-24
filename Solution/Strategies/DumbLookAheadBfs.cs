@@ -148,7 +148,21 @@
 
             int CalcProfit(List<(int, int)> touchedCells)
             {
-                return touchedCells.Count;
+                var bot = masterState.GetBot(0);
+                var edgeCells = 0;
+                foreach (var cell in touchedCells)
+                {
+                    var (x, y) = cell;
+                    if (!IsFree(x + 1, y) || !IsFree(x - 1, y) || !IsFree(x, y + 1) || !IsFree(x, y - 1))
+                    {
+                        edgeCells += 1;
+                    }
+                }
+
+                return touchedCells.Count + (10 * edgeCells);
+
+                bool IsFree(int x, int y) =>
+                    map.IsFree(x, y); // && !masterState.IsWrapped(x, y);
             }
 
             (Command? command, int profit) MeasureTurnProfit(
