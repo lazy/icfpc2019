@@ -9,7 +9,9 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Solution", "Solution\Soluti
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Tests", "Tests\Tests.csproj", "{C5315BAC-94C8-4E26-8930-5C15ADB0DB69}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BlockhainAutomator", "BlockhainAutomator\BlockhainAutomator.csproj", "{CF77AF2B-C3D0-4544-986C-A6D9EAE87194}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "BlockhainAutomator", "BlockhainAutomator\BlockhainAutomator.csproj", "{CF77AF2B-C3D0-4544-986C-A6D9EAE87194}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "OptimizeBoosters", "OptimizeBoosters\OptimizeBoosters.csproj", "{4D95829C-5698-48C1-9C83-3D87A3CF8D79}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -33,6 +35,10 @@ Global
 		{CF77AF2B-C3D0-4544-986C-A6D9EAE87194}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{CF77AF2B-C3D0-4544-986C-A6D9EAE87194}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{CF77AF2B-C3D0-4544-986C-A6D9EAE87194}.Release|Any CPU.Build.0 = Release|Any CPU
+		{4D95829C-5698-48C1-9C83-3D87A3CF8D79}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{4D95829C-5698-48C1-9C83-3D87A3CF8D79}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{4D95829C-5698-48C1-9C83-3D87A3CF8D79}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{4D95829C-5698-48C1-9C83-3D87A3CF8D79}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
