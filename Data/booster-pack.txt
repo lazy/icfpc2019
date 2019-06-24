@@ -159,9 +159,9 @@ prob-208 C
 prob-209 C
 prob-210 C
 prob-211 CC
-prob-212 CC
-prob-213 CC
-prob-214 CC
+prob-212 C
+prob-213 C
+prob-214 C
 prob-215 CC
 prob-216 C
 prob-217 C

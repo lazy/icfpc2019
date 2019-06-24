@@ -10,7 +10,7 @@
 
     public class Program
     {
-        public static readonly int InitialBudget = 275000;
+        public static readonly int InitialBudget = 344000;
 
         public static void Main(string[] args)
         {
