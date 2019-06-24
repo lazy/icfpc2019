@@ -71,7 +71,7 @@
 
         public bool IsBetterThan(ExtendedSolution that) =>
             this.IsSuccessful &&
-            (!that.IsSuccessful || (this.TimeUnits ?? int.MaxValue) <= (that.TimeUnits ?? int.MaxValue));
+            (!that.IsSuccessful || (this.TimeUnits ?? int.MaxValue) < (that.TimeUnits ?? int.MaxValue));
 
         /// <summary>
         /// Saves solution to file. But only if this file doesn't exist or this solution is better than
