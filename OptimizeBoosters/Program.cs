@@ -8,7 +8,7 @@
 
     public class Program
     {
-        public static readonly int OriginalBudget = 300000;
+        public static readonly int OriginalBudget = 350000;
 
         public static void Main(string[] args)
         {
