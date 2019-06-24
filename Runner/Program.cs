@@ -12,12 +12,14 @@
     public class Program
     {
         // For debugging
-        private static readonly int? StrategiesLimit = 5;
-        private static readonly bool LogImmediately = false;
+        private static readonly int? StrategiesLimit = 10;
+        private static readonly bool LogImmediately = true;
 
         public static void Main(string[] args)
         {
-            while (true)
+            const int Iterations = 1;
+
+            for (var i = 0; i < Iterations; ++i)
             {
                 var baseDir = args.Length > 0 ? args[0] : FindSolutionDir();
                 Directory.SetCurrentDirectory(baseDir);
@@ -33,24 +35,23 @@
 
                 Parallel.ForEach(
                     Directory.EnumerateFiles("Data/maps", "*.desc"),
-                    new ParallelOptions { MaxDegreeOfParallelism = 4 },
+                    new ParallelOptions { MaxDegreeOfParallelism = 10 },
                     mapFile =>
                     {
                         var log = new List<string>();
+                        var mapName = Path.GetFileNameWithoutExtension(mapFile);
 
                         void Log(string msg)
                         {
                             if (LogImmediately)
                             {
-                                Console.WriteLine($"{msg}");
+                                Console.WriteLine($"{mapName}: {msg}");
                             }
                             else
                             {
                                 log.Add(msg);
                             }
                         }
-
-                        var mapName = Path.GetFileNameWithoutExtension(mapFile);
 
                         if (!mapToPack.ContainsKey(mapName))
                         {
@@ -77,10 +78,10 @@
 
                         var rng = new Random();
                         var currentStrategies = StrategiesLimit != null
-                            ? strategies.OrderBy(s => rng.Next()).ToArray()
+                            ? strategies.OrderBy(s => rng.Next()).Take(StrategiesLimit.Value).ToArray()
                             : strategies;
 
-                        var solutions = currentStrategies /*.AsParallel()*/
+                        var solutions = currentStrategies.AsParallel()
                             .Where(strategy => !(mapName.Contains("294") && strategy.Name.Contains("DumbBfs")))
                             .Select(strategy => (strategy, Emulator.MakeExtendedSolution(map, strategy, packedBoosters)));
 

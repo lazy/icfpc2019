@@ -8,7 +8,7 @@
 
     public class Program
     {
-        public static readonly int OriginalBudget = 350000;
+        public static readonly int OriginalBudget = 344000;
 
         public static void Main(string[] args)
         {
@@ -26,7 +26,7 @@
                         return new MapState
                         {
                             MapName = mapName,
-                            OriginalScore = solution.TimeUnits ?? 0,
+                            OriginalTime = solution.TimeUnits ?? 0,
                             Width = map.Width,
                             Height = map.Height,
                             HasSpawns = map.NumSpawnPoints > 0,
@@ -84,7 +84,7 @@
         public class MapState
         {
             public string MapName { get; set; } = string.Empty;
-            public int OriginalScore { get; set; }
+            public int OriginalTime { get; set; }
             public int Width { get; set; }
             public int Height { get; set; }
             public bool HasSpawns { get; set; }
@@ -111,9 +111,19 @@
                     newBotCost *= 0.8;
                 }
 
-                var speedup = (float)(oldBots + newBots) / (float)oldBots;
+                // On average we are 3 times worse than competition
+                var idealTime = this.OriginalTime / 3;
+                var newTime = this.OriginalTime * ((float)oldBots / (float)(oldBots + newBots));
 
-                return (int)(this.Cost * speedup);
+                if (newTime < idealTime)
+                {
+                    return 0;
+                }
+
+                var origShare = (float)idealTime / (float)this.OriginalTime;
+                var newShare = (float)idealTime / (float)newTime;
+
+                return (int)(this.Cost * (newShare - origShare));
             }
         }
     }
